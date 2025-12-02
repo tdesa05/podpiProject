@@ -10,13 +10,12 @@ class Files():
         self.root = "MusicLibrary" # Root music directory
 
     # Iterates through given folder and returns list of contents
-    def iterate_files(self, folder):
-        folder = folder  # Folder containing music files
+    def iterate_files(self, folder): # Folder containing music files
         supported_formats = ('.mp3', '.flac')  # Supported audio formats
-        files = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name)) or name.endswith(".flac") or name.endswith(".mp3")]
+        files = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name)) or name.endswith(supported_formats)]
         #print(files)
         return files, os.path.abspath(folder)
-    
+
     def check_directory(self, i, f, full_path):
         pos = i # If a folder, row position will just be order folder is read
         title = f # If a folder, use default title
@@ -35,4 +34,4 @@ class Files():
                 song = True
         else:
            song = False
-        return pos, title, song
+        return pos, title, song # Position to be placed, metadata title, song or directory (True/False)

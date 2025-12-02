@@ -10,14 +10,16 @@ class Controls():
     def recieve_input(self, event):
         print(event.keysym)
         if event.keysym == 'BackSpace':
-            old_path = memory.get_current_path()
-            if old_path.endswith('/MusicLibrary'):
-                return old_path
+            if self.gui.navbar.get() == 'Files':
+                old_path = memory.get_current_path()
+                if old_path.endswith('/MusicLibrary'):
+                    return
+                else:
+                    new_path = old_path.rsplit("/", 1)[0]
+                    memory.set_current_path(new_path)
+                    self.gui.add_to_frame(new_path)
             else:
-                new_path = old_path.rsplit("/", 1)[0]
-                memory.set_current_path(new_path)
-                return new_path
-    
+                pass
     # Sets scope for clickwheel, handles which item to be highlighted, ready for selection
     def cw_handler(self, items):
         cw_range = len(items)

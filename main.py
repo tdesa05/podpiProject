@@ -5,6 +5,7 @@ from controls import Controls
 from memory import memory
 from playback import Playback
 from files import Files
+from PIL import Image
 
 # Set appearance and theme
 ctk.set_appearance_mode("dark")
@@ -19,7 +20,8 @@ bodyBlack = "#221f24"
 
 highlightBlue = "#2394fc"
 highlightPurple = "#7402de"
-
+albumArtPH = ctk.CTkImage(dark_image = Image.open("images/stock_album_art.jpg"),
+                            size = (120, 120))
 
 class Gui(ctk.CTk):
     # Initialize the main window
@@ -81,7 +83,7 @@ class Gui(ctk.CTk):
                                         corner_radius = 0,
                                         compound = "left",
                                         anchor = "w"
-                                        )
+        )
         self.title_label.pack()
 
         # Create scrollable frame
@@ -109,7 +111,7 @@ class Gui(ctk.CTk):
                                         corner_radius = 0,
                                         compound = "left",
                                         anchor = "w"
-                                        )
+        )
         self.title_label.pack()
 
         # Create playback frame
@@ -119,9 +121,42 @@ class Gui(ctk.CTk):
                                 fg_color = "transparent",
                                 border_width = 0,
                                 corner_radius = 0
-                            )
+        )
         self.frame.pack()
 
+        # Song album art
+        self.albumArt = ctk.CTkLabel(self.frame,
+                                     width = 120,
+                                     height = 120,
+                                     image = albumArtPH,
+                                     text = ""
+        )
+        self.albumArt.pack(padx = 5, pady = 5)
+
+        # Song title
+        self.songTitle = ctk.CTkLabel(self.frame,
+                                      width = 110,
+                                      height = 20,
+                                      text = "Summertime Loving, Loving in the Summer (Time)",
+                                      font = self.body_font                  
+        )
+        self.songTitle.pack(padx = 5, pady = 5)
+        
+        # Artist name
+        self.songArtist = ctk.CTkLabel(self.frame,
+                                      width = 70,
+                                      height = 20,
+                                      text = "Solid Bold",
+                                      font = self.title_font                 
+        )
+        self.songArtist.pack(padx = 5, pady = 5)
+
+        # Progress of song
+        self.progressBar = ctk.CTkProgressBar(self.frame,
+                                              width = 200,
+                                              height = 10
+        )
+        self.progressBar.pack(padx = 5, pady = 10)
 
         # Initialise widgets
         self.add_to_frame("MusicLibrary")
@@ -168,6 +203,12 @@ class Gui(ctk.CTk):
                                     command = command   # Refers to previously created lambda function (play or add to frame)
                                     )
             entry.grid(row=file_info[0], column=1, pady=0, padx=2, sticky="ew")
+
+    def update_album_art(self, art_path):
+        new_art = ctk.CTkImage(dark_image = Image.open(art_path),
+                               size = (120, 120)
+                               )
+        self.albumArt.configure(image = new_art)
 
 # Run the application
 if __name__ == "__main__":
