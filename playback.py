@@ -1,6 +1,5 @@
 import vlc
 import os
-import time
 from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
 from files import Files
@@ -29,6 +28,8 @@ class Playback():
             player.play()
             self.progress_bar(fp, player)
             self.get_album_art()
+            memory.set_scroll_direction('left')
+            self.gui.scrolling_label()
 
     def get_album_art(self):
         supported_formats = ('.png', '.jpg')
@@ -38,10 +39,15 @@ class Playback():
         self.gui.update_album_art(art_path)
 
     def progress_bar(self, fp, player): # fp is still full_path of song (access to metadata), player is song instance
+        counter = 1
         # If player stopped or finished, exit loop by NOT calling after() again
         if player.get_state() in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error): # type: ignore
             print("Song finished and stopping loop")
             return
-
-        print(player.get_time()/1000)
-        self.gui.after(1000, lambda: self.progress_bar(fp, player))
+        else:
+            print(player.get_time()/1000)
+            if player.get_state() in (vlc.State.Playing, vlc.State.Opening, vlc.State.Buffering): # type: ignore
+                self.gui.after(500, lambda: self.progress_bar(fp, player)) # Update bar twice a second
+            else:
+                print("Waiting")
+                self.gui.after(1000, lambda: self.progress_bar(fp, player)) # Update bar once a second

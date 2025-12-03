@@ -1,5 +1,6 @@
 import tkinter
 import customtkinter as ctk
+import time
 # Local files
 from controls import Controls
 from memory import memory
@@ -22,6 +23,7 @@ highlightBlue = "#2394fc"
 highlightPurple = "#7402de"
 albumArtPH = ctk.CTkImage(dark_image = Image.open("images/stock_album_art.jpg"),
                             size = (120, 120))
+
 
 class Gui(ctk.CTk):
     # Initialize the main window
@@ -48,7 +50,7 @@ class Gui(ctk.CTk):
                                      anchor = "s",
                                      corner_radius = 0,
                                      width = 320,
-                                     height = 15,
+                                     height = 10,
                                      fg_color = bodyBlack,
                                      bg_color = bodyBlack,
                                      segmented_button_fg_color = bodyBlack,
@@ -125,38 +127,46 @@ class Gui(ctk.CTk):
         self.frame.pack()
 
         # Song album art
-        self.albumArt = ctk.CTkLabel(self.frame,
+        self.album_art = ctk.CTkLabel(self.frame,
                                      width = 120,
                                      height = 120,
                                      image = albumArtPH,
                                      text = ""
         )
-        self.albumArt.pack(padx = 5, pady = 5)
+        self.album_art.pack(padx = 5, pady = 5)
+
+        # Song title frame
+        self.song_title_frame = ctk.CTkFrame(self.frame,
+                                             width = 240, # Width of viewable text
+                                             height = 20,
+                                             bg_color = 'transparent',
+                                             fg_color = 'transparent'
+        )
+        self.song_title_frame.pack(padx = 5, pady = 1)
 
         # Song title
-        self.songTitle = ctk.CTkLabel(self.frame,
-                                      width = 110,
+        self.song_title = ctk.CTkLabel(self.song_title_frame,
                                       height = 20,
                                       text = "Summertime Loving, Loving in the Summer (Time)",
-                                      font = self.body_font                  
+                                      font = self.body_font            
         )
-        self.songTitle.pack(padx = 5, pady = 5)
-        
+        self.song_title.place(x = 0, y = 10, anchor = 'w')
+
         # Artist name
-        self.songArtist = ctk.CTkLabel(self.frame,
+        self.song_artist = ctk.CTkLabel(self.frame,
                                       width = 70,
                                       height = 20,
                                       text = "Solid Bold",
-                                      font = self.title_font                 
+                                      font = self.title_font              
         )
-        self.songArtist.pack(padx = 5, pady = 5)
+        self.song_artist.pack(padx = 5, pady = 0)
 
         # Progress of song
-        self.progressBar = ctk.CTkProgressBar(self.frame,
+        self.progress_bar = ctk.CTkProgressBar(self.frame,
                                               width = 200,
                                               height = 10
         )
-        self.progressBar.pack(padx = 5, pady = 10)
+        self.progress_bar.pack(padx = 5, pady = 0)
 
         # Initialise widgets
         self.add_to_frame("MusicLibrary")
@@ -204,11 +214,44 @@ class Gui(ctk.CTk):
                                     )
             entry.grid(row=file_info[0], column=1, pady=0, padx=2, sticky="ew")
 
+    # Updates image to album art of current directory
     def update_album_art(self, art_path):
         new_art = ctk.CTkImage(dark_image = Image.open(art_path),
                                size = (120, 120)
                                )
-        self.albumArt.configure(image = new_art)
+        self.album_art.configure(image = new_art)
+
+    # In the event a song title does not fit on screen, scroll left and right to fit
+    def scrolling_label(self):
+        text_width = self.song_title.winfo_width()
+        scroll_direction = memory.get_scroll_direction()
+
+        # When to change direction 
+        end_target = int((text_width/2.5) *-1)
+        start_target = 5
+
+        # If text fits into the frame then dont run
+        if text_width <= 240: 
+            return
+        
+        # Scroll text left
+        else:
+            if scroll_direction == 'left':
+                self.song_title.place(y = 10, x = self.song_title.winfo_x() - 1)
+                print(self.song_title.winfo_x(),end_target)
+                if self.song_title.winfo_x() == end_target: # Reverse direction when second half of title shown
+                    memory.set_scroll_direction('right')
+                    time.sleep(2)
+                self.after(75, lambda: self.scrolling_label())
+
+            # Scroll text right
+            elif scroll_direction == 'right':
+                self.song_title.place(y = 10, x = self.song_title.winfo_x() + 1)
+                if self.song_title.winfo_x() == start_target:
+                    memory.set_scroll_direction('left')
+                    time.sleep(2)
+                self.after(75, lambda: self.scrolling_label())
+
 
 # Run the application
 if __name__ == "__main__":
