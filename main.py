@@ -24,7 +24,7 @@ highlightPurple = "#7402de"
 albumArtPH = ctk.CTkImage(dark_image = Image.open("images/stock_album_art.jpg"),
                             size = (120, 120))
 
-
+# Contains all graphical handling/functions
 class Gui(ctk.CTk):
     # Initialize the main window
     def __init__(self):
@@ -37,7 +37,10 @@ class Gui(ctk.CTk):
         self.controls = Controls(self)
         self.playback = Playback(self)
         self.files = Files(self)
-        
+
+        # Jobs (running processes)
+        self.scroll_job = None
+
         # Bind controls
         self.bind('<Key>', self.controls.recieve_input)
 
@@ -137,20 +140,20 @@ class Gui(ctk.CTk):
 
         # Song title frame
         self.song_title_frame = ctk.CTkFrame(self.frame,
-                                             width = 240, # Width of viewable text
+                                             width = 250, # Width of viewable text
                                              height = 20,
                                              bg_color = 'transparent',
                                              fg_color = 'transparent'
         )
-        self.song_title_frame.pack(padx = 5, pady = 1)
+        self.song_title_frame.pack(padx = 5, pady = 5)
 
         # Song title
         self.song_title = ctk.CTkLabel(self.song_title_frame,
                                       height = 20,
-                                      text = "Summertime Loving, Loving in the Summer (Time)",
-                                      font = self.body_font            
+                                      text = "Summertime Loving",
+                                      font = self.body_font
         )
-        self.song_title.place(x = 0, y = 10, anchor = 'w')
+        self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
 
         # Artist name
         self.song_artist = ctk.CTkLabel(self.frame,
@@ -183,7 +186,6 @@ class Gui(ctk.CTk):
         files = self.files.iterate_files(folder) # Tuple (List of files, directory)
         files[0].sort() # Maintain folder order
         memory.set_current_path(files[1])
-        print(memory.get_current_path())
         # Iterate through files in directory
         for i, f in enumerate(files[0]):
             # Path of file
@@ -221,36 +223,60 @@ class Gui(ctk.CTk):
                                )
         self.album_art.configure(image = new_art)
 
+    def update_text(self, info):
+        title = info[0]
+        artist = info[1]
+        self.song_title.configure(text = title)
+        self.song_artist.configure(text = artist)
+
     # In the event a song title does not fit on screen, scroll left and right to fit
-    def scrolling_label(self):
+    def scrolling_label(self, reset = False):
         text_width = self.song_title.winfo_width()
+        frame_width = self.song_title_frame.winfo_width()
         scroll_direction = memory.get_scroll_direction()
+        x = memory.get_scroll_x()
+
+        if reset and self.scroll_job != None:
+            self.after_cancel(self.scroll_job)
+            self.scroll_job = None
+            self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
+            memory.set_scroll_x(0)
+
+        print(text_width)
 
         # When to change direction 
-        end_target = int((text_width/2.5) *-1)
-        start_target = 5
+        end_target = -(text_width - frame_width)
+        start_target = 0
 
         # If text fits into the frame then dont run
-        if text_width <= 240: 
-            return
+        if text_width <= 250: 
+            print("yoooo")
+            self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
         
         # Scroll text left
         else:
+            print("scrolling")
             if scroll_direction == 'left':
-                self.song_title.place(y = 10, x = self.song_title.winfo_x() - 1)
-                print(self.song_title.winfo_x(),end_target)
-                if self.song_title.winfo_x() == end_target: # Reverse direction when second half of title shown
+                x -= 0.5
+                print(x, end_target)
+                self.song_title.place(x = x, y = 20/2, anchor = 'w')
+                memory.set_scroll_x(x)
+                if x <= end_target: # Reverse direction when second half of title shown
                     memory.set_scroll_direction('right')
-                    time.sleep(2)
-                self.after(75, lambda: self.scrolling_label())
+                    self.scroll_job = self.after(1500, lambda: self.scrolling_label())
+                    return
 
             # Scroll text right
             elif scroll_direction == 'right':
-                self.song_title.place(y = 10, x = self.song_title.winfo_x() + 1)
-                if self.song_title.winfo_x() == start_target:
+                x += 0.5
+                print(x, start_target)
+                self.song_title.place(x = x, y = 20/2, anchor = 'w')
+                memory.set_scroll_x(x)
+                if x >= start_target:
                     memory.set_scroll_direction('left')
-                    time.sleep(2)
-                self.after(75, lambda: self.scrolling_label())
+                    self.scroll_job = self.after(1500, lambda: self.scrolling_label())
+                    return # Otherwise speeds up crazy
+            self.scroll_job = self.after(24, lambda: self.scrolling_label())
 
 
 # Run the application
