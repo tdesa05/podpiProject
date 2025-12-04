@@ -7,6 +7,7 @@ class Memory():
         self.current_song:str = ""
         self.scroll_direction:str = ""
         self.scroll_x:float = 0
+        self.shuffle:bool = False
 
     # Getter methods
     def get_selected(self):
@@ -24,6 +25,9 @@ class Memory():
     def get_scroll_x(self):
         return self.scroll_x
 
+    def get_shuffle(self):
+        return self.shuffle
+    
     # Setter methods
     def set_selection(self, selected:str):
         self.selected = str(selected)
@@ -40,4 +44,7 @@ class Memory():
     def set_scroll_x(self, scroll_x:float):
         self.scroll_x = float(scroll_x)
 
+    def set_shuffle(self, shuffle:bool):
+        self.shuffle = bool(shuffle)
+        
 memory = Memory()

@@ -21,7 +21,7 @@ bodyBlack = "#221f24"
 
 highlightBlue = "#2394fc"
 highlightPurple = "#7402de"
-albumArtPH = ctk.CTkImage(dark_image = Image.open("images/stock_album_art.jpg"),
+albumArtPH = ctk.CTkImage(dark_image = Image.open("images/summertime_lovin.jpg"),
                             size = (120, 120))
 
 # Contains all graphical handling/functions
@@ -145,12 +145,12 @@ class Gui(ctk.CTk):
                                              bg_color = 'transparent',
                                              fg_color = 'transparent'
         )
-        self.song_title_frame.pack(padx = 5, pady = 5)
+        self.song_title_frame.pack(padx = 5, pady = 0)
 
         # Song title
         self.song_title = ctk.CTkLabel(self.song_title_frame,
                                       height = 20,
-                                      text = "Summertime Loving",
+                                      text = "Summertime Lovin'",
                                       font = self.body_font
         )
         self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
@@ -237,12 +237,11 @@ class Gui(ctk.CTk):
         x = memory.get_scroll_x()
 
         if reset and self.scroll_job != None:
-            self.after_cancel(self.scroll_job)
+            self.after_cancel(self.scroll_job) # Scroll job ensures only on 'after' is active
             self.scroll_job = None
             self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
             memory.set_scroll_x(0)
 
-        print(text_width)
 
         # When to change direction 
         end_target = -(text_width - frame_width)
@@ -250,15 +249,12 @@ class Gui(ctk.CTk):
 
         # If text fits into the frame then dont run
         if text_width <= 250: 
-            print("yoooo")
             self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
         
         # Scroll text left
         else:
-            print("scrolling")
             if scroll_direction == 'left':
                 x -= 0.5
-                print(x, end_target)
                 self.song_title.place(x = x, y = 20/2, anchor = 'w')
                 memory.set_scroll_x(x)
                 if x <= end_target: # Reverse direction when second half of title shown
@@ -269,7 +265,6 @@ class Gui(ctk.CTk):
             # Scroll text right
             elif scroll_direction == 'right':
                 x += 0.5
-                print(x, start_target)
                 self.song_title.place(x = x, y = 20/2, anchor = 'w')
                 memory.set_scroll_x(x)
                 if x >= start_target:
