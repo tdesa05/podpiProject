@@ -13,7 +13,7 @@ class Files():
     def iterate_files(self, folder): # Folder containing music files
         supported_formats = ('.mp3', '.flac')  # Supported audio formats
         files = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name)) or name.endswith(supported_formats)]
-        #print(files)
+        files.sort() # Maintain folder order
         return files, os.path.abspath(folder)
 
     def check_directory(self, i, f, full_path):
@@ -35,3 +35,27 @@ class Files():
         else:
            song = False
         return pos, title, song # Position to be placed, metadata title, song or directory (True/False)
+        
+    # Searches folder for songs and directories, returns these songs, whether more searching is required and the directories to search
+    def fetch_songs(self, folder_contents:list, folder_directory:str):
+        new_folder_contents:list = [] # Contains new items
+        directories:list = [] # Contains directories that need to be searched
+        continue_fetch = False # Default - indicates no more searching required
+
+        # Go through folder contents, add to list if is music file
+        for i in folder_contents:
+            if str(i).endswith('.flac' or '.mp3'): # Check if song
+                if i in new_folder_contents: # No duplicates
+                    pass
+                else:
+                    new_folder_contents.insert(0, folder_directory + '/' + i) # Insert song
+            else:
+                if not continue_fetch:
+                    continue_fetch = True
+                directories.insert(0, folder_directory + '/' + i)
+
+            # Sorting, just to be neat
+            directories.sort()
+            new_folder_contents.sort()
+        
+        return new_folder_contents, continue_fetch, directories

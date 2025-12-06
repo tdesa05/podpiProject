@@ -14,8 +14,10 @@ class Playback():
     def __init__(self, gui):
         super().__init__()
         self.gui = gui # When the gui calls this file and its functions, its passing in its whole object reference
+        self.media_library = 'MusicLibrary'
         self.player = instance.media_list_player_new() # type: ignore
         self.media_list = instance.media_list_new() # type: ignore
+        self.files = Files(self)
 
     def reset_media_list(self):
         self.media_list = instance.media_list_new() # type: ignore
@@ -30,6 +32,7 @@ class Playback():
             print(fp, "Queued")
             self.player.next() # Skip to next song (REMOVE ONLY FOR DEBUGGING)
         elif option == "play":
+            self.shuffle(self.media_library, True)
             self.player.stop() # Stop playback
             self.reset_media_list()
             media = instance.media_new(fp) # type: ignore
@@ -108,20 +111,51 @@ class Playback():
 
             # Replace the existing list
             self.reset_media_list()
-            self.media_list.set_media_list(new_list)
+            self.media_list.set_media(new_list)
         else:
             # Un shuffle playback
             print("unshuffle")
 
 
-    # Shuffle entire library
-    def library_shuffle(self,):
-        self.reset_media_list()
+    # Shuffle a folder of music
+    def shuffle(self, folder, skip:bool):
+        # Beginning of search (root library)
+        root_info = self.files.iterate_files(folder)
+        root_contents = root_info[0] # Index 0 is contents list, index 1 is path to directory
+        root_directory = root_info[1]
+        initial_fetch = self.files.fetch_songs(root_contents, root_directory)
 
-        # Need to go through library of songs and add them all
-        self.media_list.add('')
+        songs:list = initial_fetch[0]
+        continue_fetch = initial_fetch[1]
+        directories:list = initial_fetch[2]
+        new_directories:list = []
 
-        # Then shuffle this queue
+        # Go into each directory until getting each songs
+        while continue_fetch:
+            for i in directories:
+                folder_info = self.files.iterate_files(i)
+                folder_contents = folder_info[0]
+                folder_directory = folder_info[1]
+                fetch = self.files.fetch_songs(folder_contents, folder_directory)
+                found_songs = fetch[0]
+                songs += found_songs
+                continue_fetch = fetch[1]
+                found_directories = fetch[2]
+                new_directories += found_directories
+            # Once all folders in directory are searched, update to new folders 
+            directories.clear()
+            directories += new_directories
+            new_directories.clear()
 
+        print(songs)
 
-        self.player.set_media_list(self.media_list)
+        # Then shuffle this list of songs
+        shuffled_songs = random.shuffle(songs)
+
+        # Set media list
+        #self.reset_media_list()
+        #self.media_list.set_media(shuffled_songs)
+
+        #self.player.set_media_list(self.media_list)
+        #if skip: # Allows control whether to skip to shuffle queue or let current song playout
+        #   self.player.next()

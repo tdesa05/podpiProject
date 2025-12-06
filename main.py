@@ -184,7 +184,6 @@ class Gui(ctk.CTk):
     def add_to_frame(self, folder):
         self.clear_frame()
         files = self.files.iterate_files(folder) # Tuple (List of files, directory)
-        files[0].sort() # Maintain folder order
         memory.set_current_path(files[1])
         # Iterate through files in directory
         for i, f in enumerate(files[0]):
