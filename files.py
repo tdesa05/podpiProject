@@ -6,7 +6,7 @@ from mutagen.mp3 import MP3
 class Files():
     def __init__(self, gui):
         super().__init__()
-        self.gui = gui # When the gui calls this file and its functions, its passing in its whole object reference
+        self.gui = gui # When another file calls this file and its functions, its passing in its whole object reference
         self.root = "MusicLibrary" # Root music directory
 
     # Iterates through given folder and returns list of contents
@@ -14,7 +14,10 @@ class Files():
         supported_formats = ('.mp3', '.flac')  # Supported audio formats
         files = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name)) or name.endswith(supported_formats)]
         files.sort() # Maintain folder order
-        return files, os.path.abspath(folder)
+        abspath = os.path.abspath(folder)
+        relpath = abspath.split(self.root, 1)[1]
+        relpath = self.root + relpath
+        return files, relpath
 
     def check_directory(self, i, f, full_path):
         pos = i # If a folder, row position will just be order folder is read

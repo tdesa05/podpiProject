@@ -31,6 +31,7 @@ class Gui(ctk.CTk):
         super().__init__()
         self.title("Navigate Library") # Title of the window
         self.geometry("320x240") # Width x Height
+        self.resizable(False, False)
         self.configure(fg_color = titleBlack, bg_color = titleBlack)
 
         # Classes (logic)
@@ -271,7 +272,7 @@ class Gui(ctk.CTk):
                     self.scroll_job = self.after(1500, lambda: self.scrolling_label())
                     return # Otherwise speeds up crazy
             self.scroll_job = self.after(24, lambda: self.scrolling_label())
-
+    
 
 # Run the application
 if __name__ == "__main__":

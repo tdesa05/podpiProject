@@ -3,8 +3,9 @@ class Memory():
     def __init__(self):
         super().__init__()
         self.selected:str = ""
-        self.current_path:str = ""
-        self.current_song:str = ""
+        self.current_path:str = "" # Current path in files (not current path of playing song)
+        self.current_song:str = "" # Current song playing
+        self.previous_song:str = "" # Previous song played
         self.scroll_direction:str = ""
         self.scroll_x:float = 0
         self.shuffle:bool = False
@@ -18,6 +19,9 @@ class Memory():
 
     def get_current_song(self):
         return self.current_song
+    
+    def get_previous_song(self):
+        return self.previous_song
     
     def get_scroll_direction(self):
         return self.scroll_direction
@@ -37,6 +41,9 @@ class Memory():
 
     def set_current_song(self, current_song:str):
         self.current_song = str(current_song)
+    
+    def set_previous_song(self, previous_song:str):
+        self.previous_song = str(previous_song)
     
     def set_scroll_direction(self, scroll_direction:str):
         self.scroll_direction = str(scroll_direction)

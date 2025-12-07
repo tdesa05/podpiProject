@@ -5,55 +5,72 @@ from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
 from files import Files
 from memory import memory
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 # Initialise VLC
 instance = vlc.Instance("--vout=dummy")
+player = instance.media_list_player_new() # type: ignore
 
 # Handles playback of music files / streaming
 class Playback():
     def __init__(self, gui):
         super().__init__()
-        self.gui = gui # When the gui calls this file and its functions, its passing in its whole object reference
+        self.gui = gui # When another file calls this file and its functions, its passing in its whole object reference
         self.media_library = 'MusicLibrary'
-        self.player = instance.media_list_player_new() # type: ignore
         self.media_list = instance.media_list_new() # type: ignore
         self.files = Files(self)
+
+        # Player to read events off of
+        self.internal_player = player.get_media_player()
+
+        # Event manager
+        player_events = self.internal_player.event_manager()
+        player_events.event_attach(vlc.EventType.MediaPlayerPlaying, lambda event: self.on_play(event)) # type: ignore
+        #player_events.event_attach(vlc.EventType.MediaPlayerPaused, self.on_pause) # type: ignore
+        player_events.event_attach(vlc.EventType.MediaPlayerEndReached, lambda event: self.on_end(event)) # type: ignore
 
     def reset_media_list(self):
         self.media_list = instance.media_list_new() # type: ignore
 
+    def song_action(self, action:str):
+        if action == 'skip':
+            player.next()
+        elif action == 'pause' or 'play':
+            if vlc.State.Playing: # type: ignore
+                player.pause()
+            elif vlc.State.Paused: # type: ignore
+                player.play()
+        elif action == 'back':
+            player.previous()
+
+
     # Handles audio playback based on given parameters
-    def recieve_song(self, fp:str, option:str): # fp is songs path, option is what to do with song file
+    def recieve_song(self, fp:str = "", option:str = "play"): # fp is songs path, option is what to do with song file
         print("Song recieved")
         if option == "queue":
             # ADD AN IF TO SEE IF LIST CONTAINS ANY FILES FIRST (SO THE QUEUE BUTTON WORKS EVEN WHEN IT SHOULDNT)
             media = instance.media_new(fp) # type: ignore
             self.media_list.add_media(self.media_list) # Add media to list
             print(fp, "Queued")
-            self.player.next() # Skip to next song (REMOVE ONLY FOR DEBUGGING)
+            player.next() # Skip to next song (REMOVE ONLY FOR DEBUGGING)
         elif option == "play":
-            self.shuffle(self.media_library, True)
-            self.player.stop() # Stop playback
-            self.reset_media_list()
-            media = instance.media_new(fp) # type: ignore
-            self.media_list.add_media(media) # Add song
-            self.player.set_media_list(self.media_list) # Add song to player
+            if fp.startswith('file:'):
+                print("butt")
+            else:
+                player.stop() # Stop playback
+                self.reset_media_list()
+                media = instance.media_new(fp) # type: ignore
+                self.media_list.add_media(media) # Add song
+                player.set_media_list(self.media_list) # Add song to player
 
-            print("Beginning playback for song ", fp)
-            self.player.play() # Play song
+                print("Beginning playback for song ", fp)
+                player.play() # Play song
 
-            if self.gui.navbar.get() != "Playback":
-                print("Switched to Playback tab")
-                self.gui.navbar.set("Playback")
-
-        # Statements to run no matter what
-        self.progress_bar(fp, self.player)
-        self.gui.update_text(self.get_title_artist(fp))
-        self.gui.update_album_art(self.get_album_art())
-        memory.set_scroll_direction('left')
-        self.gui.update_idletasks()
-        self.gui.scrolling_label(True)
-
+                if self.gui.navbar.get() != "Playback":
+                    print("Switched to Playback tab")
+                    self.gui.navbar.set("Playback")
+                #self.on_play()
     # Get artist name from metadata of current song
     def get_title_artist(self, fp):
         if fp.endswith(".flac"):
@@ -69,12 +86,12 @@ class Playback():
     # Get album art from folder of current song
     def get_album_art(self):
         supported_formats = ('.png', '.jpg')
-        album_path = memory.get_current_path()
+        album_path = os.path.dirname(memory.get_current_song())
         files = [name for name in os.listdir(album_path) if name.endswith(supported_formats)]
         try:
             art_path = album_path + '/' + files[0]
         except:
-            art_path = 'images/stock_album_art_7.jpg'
+            art_path = 'images/stock_album_art_2.jpg'
         return art_path
 
     # Visual indicator of remaining song time
@@ -84,10 +101,10 @@ class Playback():
         if player.get_state() in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error): # type: ignore
             print("Song finished and stopping loop")
             return
-        else:
+        else: # !!!THE CLASS BEING PASSED IN IS CONTROLS WHEN PAUSE AND PLAYING NOT GUI!!!
             if player.get_state() in (vlc.State.Playing, vlc.State.Opening, vlc.State.Buffering): # type: ignore
                 self.gui.after(500, lambda: self.progress_bar(fp, player)) # Update bar twice a second
-            else:
+            elif player.get_state() == vlc.State.Paused: # type: ignore
                 self.gui.after(1000, lambda: self.progress_bar(fp, player)) # Update bar once a second
     
     # Check whether shuffle is enabled or not, then handle queue
@@ -116,9 +133,34 @@ class Playback():
             # Un shuffle playback
             print("unshuffle")
 
+    # Events for on_play NEED TO FIX FOR PICKING SONG
+    def on_play(self, event): # 'event' required for the lambda, VLC doesn't like class functions
+        print("act")
+        mrl = player.get_media_player().get_media().get_mrl()
+        fp = url2pathname(urlparse(mrl).path)
+        if memory.get_current_song == fp:
+            return
+        else:
+            memory.set_current_song(fp)
+            print(fp)
+            #self.shuffle(self.media_library, False)
+            # Statements to run no matter what
+            self.progress_bar(fp, player)
+            self.gui.update_text(self.get_title_artist(fp))
+            self.gui.update_album_art(self.get_album_art())
+            memory.set_scroll_direction('left')
+            self.gui.update_idletasks()
+            self.gui.scrolling_label(True)
+
+    def on_pause(self, event):
+        pass
+
+    def on_end(self, event):
+        memory.set_previous_song(memory.get_previous_song())
+        print(memory.get_previous_song)
 
     # Shuffle a folder of music
-    def shuffle(self, folder, skip:bool):
+    def shuffle(self, folder, queue:bool):
         # Beginning of search (root library)
         root_info = self.files.iterate_files(folder)
         root_contents = root_info[0] # Index 0 is contents list, index 1 is path to directory
@@ -147,15 +189,22 @@ class Playback():
             directories += new_directories
             new_directories.clear()
 
-        print(songs)
 
         # Then shuffle this list of songs
-        shuffled_songs = random.shuffle(songs)
+        random.shuffle(songs)
 
         # Set media list
-        #self.reset_media_list()
-        #self.media_list.set_media(shuffled_songs)
-
-        #self.player.set_media_list(self.media_list)
-        #if skip: # Allows control whether to skip to shuffle queue or let current song playout
-        #   self.player.next()
+        new_media_list = instance.media_list_new() # type: ignore
+        for fp in songs:
+            media = instance.media_new(fp) # type: ignore
+            new_media_list.add_media(media)
+        
+        if queue: # Allows control whether to skip to shuffle queue or let current song playout
+            for i in range(new_media_list.count()):
+                self.media_list.add_media(new_media_list.item_at_index(i))
+        else:
+            player.stop()
+            self.reset_media_list()
+            self.media_list = new_media_list
+            player.set_media_list(self.media_list)
+            player.play()
