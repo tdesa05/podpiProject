@@ -1,6 +1,10 @@
 This is a portable VLC based media player, using an SPI screen, customtkinter interface and interchangeable DAC.
 The GUI looks for music stored in MusicLibrary folder (in same directory as main.py)
 
+Screen Waveshare FBCP driver tutorial https://www.waveshare.com/wiki/2inch_LCD_Module#Working_with_Raspberry_Pi:
+- Had to use Raspbian Bullseye (Lite 32 bit) to get screen working
+- Using X (no openbox) to show python window
+
 
 * Currently it assumes the structure MusicLibrary/Artist/Album [Year]/Song
 * Used PiCard to fetch metadata for my song library, metadata is assumed by scripts
@@ -21,3 +25,5 @@ I am using:
 - iPod 4th gen clickwheel + 8pin 0.5mm breakout board (AliExpress)
 - 2 pin buttons, 3 pin slide switches (AliExpress)
 - KY-040 rotary encoder (AliExpress)
+
+

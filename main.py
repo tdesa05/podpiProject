@@ -6,6 +6,7 @@ from controls import Controls
 from memory import memory
 from playback import Playback
 from files import Files
+from spotify import Spotify
 from PIL import Image
 
 # Set appearance and theme
@@ -65,9 +66,8 @@ class Gui(ctk.CTk):
 
         # Initialise tabs
         self.fileTab = self.navbar.add("Files")
-
-
         self.playbackTab = self.navbar.add("Playback")
+        self.spotifyTab = self.navbar.add("Spotify")
 
 
 
@@ -78,8 +78,9 @@ class Gui(ctk.CTk):
             font = self.title_font
         )
 
+        ### FILES TAB ###
         # Tab title
-        self.title_label = ctk.CTkLabel(self.fileTab,
+        self.file_title_label = ctk.CTkLabel(self.fileTab,
                                         width = 320,
                                         height = 20,
                                         text = " Music",
@@ -90,10 +91,10 @@ class Gui(ctk.CTk):
                                         compound = "left",
                                         anchor = "w"
         )
-        self.title_label.pack()
+        self.file_title_label.pack()
 
         # Create scrollable frame
-        self.scrollable_frame = ctk.CTkScrollableFrame(self.fileTab,
+        self.files_scrollable_frame = ctk.CTkScrollableFrame(self.fileTab,
                                                     orientation ="vertical",
                                                     width = 320,
                                                     height = 240,
@@ -102,12 +103,14 @@ class Gui(ctk.CTk):
                                                     border_width = 0,
                                                     corner_radius = 0
                                                 )
-        self.scrollable_frame.pack()
-        self.scrollable_frame.grid_columnconfigure(0, weight = 1)
-        self.scrollable_frame.grid_rowconfigure(0, weight = 1)
+        self.files_scrollable_frame.pack()
+        self.files_scrollable_frame.grid_columnconfigure(0, weight = 1)
+        self.files_scrollable_frame.grid_rowconfigure(0, weight = 1)
 
+
+        ### PLAYBACK TAB ###
         # Tab title
-        self.title_label = ctk.CTkLabel(self.playbackTab,
+        self.playback_title_label = ctk.CTkLabel(self.playbackTab,
                                         width = 320,
                                         height = 20,
                                         text = " Playback",
@@ -118,20 +121,20 @@ class Gui(ctk.CTk):
                                         compound = "left",
                                         anchor = "w"
         )
-        self.title_label.pack()
+        self.playback_title_label.pack()
 
         # Create playback frame
-        self.frame = ctk.CTkFrame(self.playbackTab,
+        self.playback_frame = ctk.CTkFrame(self.playbackTab,
                                 width = 320,
                                 height = 240,
                                 fg_color = "transparent",
                                 border_width = 0,
                                 corner_radius = 0
         )
-        self.frame.pack()
+        self.playback_frame.pack()
 
         # Song album art
-        self.album_art = ctk.CTkLabel(self.frame,
+        self.album_art = ctk.CTkLabel(self.playback_frame,
                                      width = 120,
                                      height = 120,
                                      image = albumArtPH,
@@ -140,7 +143,7 @@ class Gui(ctk.CTk):
         self.album_art.pack(padx = 5, pady = 5)
 
         # Song title frame
-        self.song_title_frame = ctk.CTkFrame(self.frame,
+        self.song_title_frame = ctk.CTkFrame(self.playback_frame,
                                              width = 250, # Width of viewable text
                                              height = 20,
                                              bg_color = 'transparent',
@@ -157,7 +160,7 @@ class Gui(ctk.CTk):
         self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
 
         # Artist name
-        self.song_artist = ctk.CTkLabel(self.frame,
+        self.song_artist = ctk.CTkLabel(self.playback_frame,
                                       width = 70,
                                       height = 20,
                                       text = "Solid Bold",
@@ -166,20 +169,50 @@ class Gui(ctk.CTk):
         self.song_artist.pack(padx = 5, pady = 0)
 
         # Progress of song
-        self.progress_bar = ctk.CTkProgressBar(self.frame,
+        self.progress_bar = ctk.CTkProgressBar(self.playback_frame,
                                               width = 200,
                                               height = 10
         )
         self.progress_bar.pack(padx = 5, pady = 0)
 
+
+        ### SPOTIFY TAB ###
+        # Tab title
+        self.spotify_title_label = ctk.CTkLabel(self.spotifyTab,
+                                        width = 320,
+                                        height = 20,
+                                        text = " Spotify",
+                                        text_color = "white",
+                                        font = self.title_font,
+                                        fg_color = titleBlack,
+                                        corner_radius = 0,
+                                        compound = "left",
+                                        anchor = "w"
+        )
+        self.spotify_title_label.pack()
+
+        # Create scrollable frame
+        self.spotify_scrollable_frame = ctk.CTkScrollableFrame(self.spotifyTab,
+                                                    orientation ="vertical",
+                                                    width = 320,
+                                                    height = 240,
+                                                    fg_color = "transparent",
+                                                    scrollbar_button_color = titleBlack,
+                                                    border_width = 0,
+                                                    corner_radius = 0
+                                                )
+        self.spotify_scrollable_frame.pack()
+        self.spotify_scrollable_frame.grid_columnconfigure(0, weight = 1)
+        self.spotify_scrollable_frame.grid_rowconfigure(0, weight = 1)
+
         # Initialise widgets
         self.add_to_frame("MusicLibrary")
-    
+
     # Clear the scrollable frame
     def clear_frame(self):
-        for item in self.scrollable_frame.winfo_children():
+        for item in self.files_scrollable_frame.winfo_children():
             item.destroy()
-        self.scrollable_frame._parent_canvas.yview_moveto(0.0) # Reset scroll position to top of page
+        self.files_scrollable_frame._parent_canvas.yview_moveto(0.0) # Reset scroll position to top of page
 
     # Add items to scrollable frame
     def add_to_frame(self, folder):
@@ -200,7 +233,7 @@ class Gui(ctk.CTk):
                 command = lambda fp = full_path: self.add_to_frame(fp) 
 
             # Create buttons for directories/files
-            entry = ctk.CTkButton(self.scrollable_frame,
+            entry = ctk.CTkButton(self.files_scrollable_frame,
                                     width = 320, 
                                     height = 8, 
                                     fg_color = "transparent",
