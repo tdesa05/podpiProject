@@ -1,13 +1,11 @@
 from memory import memory
-from playback import Playback
 
 # Interprets controls based on signals from main.py
 class Controls():
-    def __init__(self, gui):
+    def __init__(self, gui, playback):
         super().__init__()
         self.gui = gui # When another file calls this file and its functions, its passing in its whole object reference
-        self.playback = Playback(self)
-
+        self.playback = playback
     # Recieve and interpret input (eventually used for physical buttons)
     def recieve_input(self, event):
         print(event.keysym)
@@ -34,7 +32,7 @@ class Controls():
         elif event.keysym == 'a':
             self.gui.playback.song_action('skip')
         elif event.keysym == 'z':
-            print()
+            self.playback.song_action('shuffle')
 
     # Sets scope for clickwheel, handles which item to be highlighted, ready for selection
     def cw_handler(self, items):

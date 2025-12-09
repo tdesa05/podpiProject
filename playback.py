@@ -43,6 +43,9 @@ class Playback():
                 player.play()
         elif action == 'back':
             player.previous()
+        elif action == 'shuffle':
+            self.shuffle(self.media_library, False)
+
 
 
     # Handles audio playback based on given parameters
@@ -66,11 +69,11 @@ class Playback():
 
                 print("Beginning playback for song ", fp)
                 player.play() # Play song
-
                 if self.gui.navbar.get() != "Playback":
                     print("Switched to Playback tab")
                     self.gui.navbar.set("Playback")
-                #self.on_play()
+
+
     # Get artist name from metadata of current song
     def get_title_artist(self, fp):
         if fp.endswith(".flac"):
@@ -95,17 +98,18 @@ class Playback():
         return art_path
 
     # Visual indicator of remaining song time
-    def progress_bar(self, fp, player): # fp is still full_path of song (access to metadata), player is song instance
-        counter = 1
+    # Change it so this is called from main, and given the fp, then returns song progress back to main,
+    # Main loops calling this function here if appropriate.
+    def progress_bar(self, gui, fp): # fp is still full_path of song (access to metadata), player is song instance
         # If player stopped or finished, exit loop by NOT calling after() again
         if player.get_state() in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error): # type: ignore
             print("Song finished and stopping loop")
             return
         else: # !!!THE CLASS BEING PASSED IN IS CONTROLS WHEN PAUSE AND PLAYING NOT GUI!!!
             if player.get_state() in (vlc.State.Playing, vlc.State.Opening, vlc.State.Buffering): # type: ignore
-                self.gui.after(500, lambda: self.progress_bar(fp, player)) # Update bar twice a second
+                gui.after(500, lambda: self.progress_bar(gui, fp)) # Update bar twice a second
             elif player.get_state() == vlc.State.Paused: # type: ignore
-                self.gui.after(1000, lambda: self.progress_bar(fp, player)) # Update bar once a second
+                gui.after(1000, lambda: self.progress_bar(gui, fp)) # Update bar once a second
     
     # Check whether shuffle is enabled or not, then handle queue
     def check_shuffle(self):
@@ -145,7 +149,7 @@ class Playback():
             print(fp)
             #self.shuffle(self.media_library, False)
             # Statements to run no matter what
-            self.progress_bar(fp, player)
+            self.gui.update_progress_bar(fp)
             self.gui.update_text(self.get_title_artist(fp))
             self.gui.update_album_art(self.get_album_art())
             memory.set_scroll_direction('left')
