@@ -98,18 +98,20 @@ class Playback():
         return art_path
 
     # Visual indicator of remaining song time
-    # Change it so this is called from main, and given the fp, then returns song progress back to main,
-    # Main loops calling this function here if appropriate.
-    def progress_bar(self, gui, fp): # fp is still full_path of song (access to metadata), player is song instance
+    def progress_bar(self, fp): # fp is still full_path of song (access to metadata), player is song instance
         # If player stopped or finished, exit loop by NOT calling after() again
         if player.get_state() in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error): # type: ignore
             print("Song finished and stopping loop")
             return
-        else: # !!!THE CLASS BEING PASSED IN IS CONTROLS WHEN PAUSE AND PLAYING NOT GUI!!!
-            if player.get_state() in (vlc.State.Playing, vlc.State.Opening, vlc.State.Buffering): # type: ignore
-                gui.after(500, lambda: self.progress_bar(gui, fp)) # Update bar twice a second
+        else: 
+            if player.is_playing(): # type: ignore
+                m = player.get_media_player() # Media player within listplayer
+                current_time = m.get_time()
+                length = m.get_length()
+                self.gui.update_progress_bar(current_time, length)
+                self.gui.after(500, lambda: self.progress_bar(fp)) # Update bar twice a second
             elif player.get_state() == vlc.State.Paused: # type: ignore
-                gui.after(1000, lambda: self.progress_bar(gui, fp)) # Update bar once a second
+                self.gui.after(1000, lambda: self.progress_bar(fp)) # Update bar once a second
     
     # Check whether shuffle is enabled or not, then handle queue
     def check_shuffle(self):
@@ -149,7 +151,7 @@ class Playback():
             print(fp)
             #self.shuffle(self.media_library, False)
             # Statements to run no matter what
-            self.gui.update_progress_bar(fp)
+            self.progress_bar(fp)
             self.gui.update_text(self.get_title_artist(fp))
             self.gui.update_album_art(self.get_album_art())
             memory.set_scroll_direction('left')

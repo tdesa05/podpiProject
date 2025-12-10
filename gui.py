@@ -51,6 +51,7 @@ class Gui(ctk.CTk):
         # Fonts
         self.title_font = ctk.CTkFont(family = "Myriad", size = 12, weight = "bold")
         self.body_font = ctk.CTkFont(family = "Myriad", size = 16, weight = "bold")
+        self.time_font = ctk.CTkFont(family="Courier New", size=12) # All characters are same size
 
         # Navigation bar, view control
         self.navbar = ctk.CTkTabview(self,
@@ -170,14 +171,41 @@ class Gui(ctk.CTk):
         )
         self.song_artist.pack(padx = 5, pady = 0)
 
-        # Progress of song
-        self.progress_bar = ctk.CTkProgressBar(self.playback_frame,
-                                              width = 200,
-                                              height = 10,
-                                              progress_color = highlightPurple,
-                                              mode = "determinate"
+        # Frame containing bar, and labels
+        self.progress_frame = ctk.CTkFrame(self.playback_frame,
+                                           height = 10,
+                                           fg_color = "transparent"
+        )   
+        self.progress_frame.pack(fill = "x", padx = 0)
+
+        # Current song positon
+        self.progress_current = ctk.CTkLabel(self.progress_frame,
+                                           width = 20,
+                                           height = 10,
+                                           font = self.time_font,
+                                           text = "0:00",
+                                           anchor = "w"
         )
-        self.progress_bar.pack(padx = 5, pady = 0)
+        self.progress_current.pack(padx = 1, side = "left")
+
+        # Progress of song
+        self.progress_bar = ctk.CTkProgressBar(self.progress_frame,
+                                               width = 200,
+                                               height = 10,
+                                               progress_color = highlightPurple,
+                                               mode = "determinate"
+        )
+        self.progress_bar.pack(side = "left", padx = 5, pady = 0)
+
+        # Length of song
+        self.progress_end = ctk.CTkLabel(self.progress_frame,
+                                           width = 20,
+                                           height = 10,
+                                           font = self.time_font,
+                                           text = "10:00",
+                                           anchor = "e"
+        )
+        self.progress_end.pack(padx = 1, side = "right")
 
 
         ### SPOTIFY TAB ###
@@ -260,15 +288,40 @@ class Gui(ctk.CTk):
                                )
         self.album_art.configure(image = new_art)
 
+    # Updates text on playback screen
     def update_text(self, info):
         title = info[0]
         artist = info[1]
         self.song_title.configure(text = title)
         self.song_artist.configure(text = artist)
 
-    def update_progress_bar(self, fp):
-        self.playback.progress_bar(self, fp)
-        pass
+    # Updates gui to reflect progress of song, along with timestamps on bar
+    def update_progress_bar(self, current_time, total_time):
+        bar_pos = current_time/total_time
+        self.progress_bar.set(bar_pos)
+
+        # String for current song time
+        current_time = (current_time / 1000)
+        current_minutes = int(current_time // 60)
+        current_seconds = int(current_time % 60)
+        s_current_seconds = str(current_seconds)
+        if len(s_current_seconds) == 1:
+            s_current_seconds = '0' + s_current_seconds
+        str_current = str(current_minutes) + ':' + s_current_seconds
+
+        # String for length of song
+        total_time = (total_time / 1000)
+        total_minutes = int(total_time // 60)
+        total_seconds = int(total_time % 60)
+        s_total_seconds = str(total_seconds)
+        if len(s_total_seconds) == 1:
+            s_total_seconds = '0' + s_total_seconds
+        str_length = str(total_minutes) + ':' + s_total_seconds
+
+        if self.progress_end.cget("text") != str_length:
+            self.progress_end.configure(text = str_length)
+        self.progress_current.configure(text = str_current)
+    
 
     # In the event a song title does not fit on screen, scroll left and right to fit
     def scrolling_label(self, reset = False):
