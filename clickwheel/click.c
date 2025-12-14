@@ -7,7 +7,7 @@
 #include <unistd.h> 
 
 #define CLOCK_PIN 23    // GPIO 23 (Physical Pin 16)
-#define DATA_PIN 24     // GPIO 24 (Physical Pin 18)
+#define DATA_PIN 22     // GPIO 24 (Physical Pin 18)
 
 // Global variable to hold the latest data state
 volatile int currentDataLevel = 1;
