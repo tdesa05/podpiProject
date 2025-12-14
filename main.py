@@ -14,5 +14,5 @@ if __name__ == "__main__":
     controls = Controls(gui, playback)
     files = Files(gui)
     #spotify = Spotify(gui)
-
+    controls.cw_handler()
     gui.mainloop()

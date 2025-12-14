@@ -1,4 +1,22 @@
 from memory import memory
+import socket
+
+# Gemini AI heavily helped with implementation of clickwheel components, based on Dupont's driver
+
+# --- Configuration ---
+UDP_IP = "127.0.0.1" # Listen to localhost
+UDP_PORT = 9090      # Same port as C driver
+last_wheel_pos = -1
+
+# Button mapping of click wheel
+BUTTON_MAP = {
+    8:  "CENTER",
+    12: "MENU (UP)",
+    11: "PLAY/PAUSE (DOWN)",
+    10: "PREV (LEFT)",
+    9:  "NEXT (RIGHT)",
+    29: "TOUCH (Surface)"
+}
 
 # Interprets controls based on signals from main.py
 class Controls():
@@ -34,6 +52,35 @@ class Controls():
         elif event.keysym == 'z':
             self.playback.song_action('shuffle')
 
-    # Sets scope for clickwheel, handles which item to be highlighted, ready for selection
-    def cw_handler(self, items):
-        cw_range = len(items)
+
+    # Interprets data driver hosts on ip and port, sends relevant commands to interface
+    def cw_handler(self):
+        # Create socket and bind to the ip + port
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind((UDP_IP, UDP_PORT))
+        try:
+            while True:
+                # Buffer size is 3 because the C driver sends exactly 3 bytes
+                data, addr = sock.recvfrom(3) 
+
+                # Parse the bytes (Python treats bytes as integers 0-255)
+                btn_id = data[0]
+                btn_state = data[1]
+                wheel_pos = data[2]
+
+                # --- Handle Buttons ---
+                # The C driver sends 255 (0xFF) if no button event occurred in this packet
+                if btn_id != 255:
+                    btn_name = BUTTON_MAP.get(btn_id, f"Unknown ({btn_id})")
+                    state_str = "PRESSED" if btn_state == 1 else "RELEASED"
+                    print(f"[BUTTON] {btn_name} : {state_str}")
+
+                # --- Handle Wheel ---
+                # You can add logic here to compare this to the 'last_pos'
+                # to determine if it moved Clockwise or Counter-Clockwise
+                print(f"[WHEEL]  Position: {wheel_pos}")
+
+        except KeyboardInterrupt:
+            print("\nExiting...")
+        finally:
+            sock.close()
