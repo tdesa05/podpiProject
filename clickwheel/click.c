@@ -12,7 +12,8 @@
 #include <netinet/in.h> 
 
 #define CLOCK_PIN 23
-#define DATA_PIN 24
+#define DATA_PIN 25
+#define HAPTIC_PIN 26
 #define BIT_COUNT 32
 #define PORT 9090 
 #define MAXLINE 1024 
@@ -39,7 +40,7 @@ uint8_t recording = 0;
 // indicates whether the data pin is high or low
 uint8_t dataBit = 1;
 uint8_t lastPosition = 255;
-
+int hapticWaveId = -1;
 
 char buttons[] = { 
     CENTER_BUTTON_BIT, 
@@ -73,9 +74,9 @@ void printBinary(uint32_t value) {
 
 // parse packet and broadcast data
 void sendPacket() {
-    //if ((bits & PACKET_START) != PACKET_START) {
-    //    return;
-    //}
+    if ((bits & PACKET_START) != PACKET_START) {
+        return;
+    }
     for (size_t i = 0; i < BUFFER_SIZE; i++) {
         buffer[i] = -1;
     }
@@ -93,8 +94,13 @@ void sendPacket() {
         }
     }
     uint8_t wheelPosition = (bits >> 16) & 0xFF;
-
-
+    // send haptics every other position. too sensitive otherwise
+    if (wheelPosition != lastPosition && wheelPosition % 2 == 0) {
+        if (hapticWaveId != -1) {
+            gpioWaveTxSend(hapticWaveId, PI_WAVE_MODE_ONE_SHOT);
+        }
+        lastPosition = wheelPosition;
+    }
     buffer[WHEEL_POSITION_INDEX] = wheelPosition;
     if (memcmp(prev_buffer, buffer, BUFFER_SIZE) == 0) {
         return;
@@ -151,8 +157,8 @@ void onDataEdge(int gpio, int level, uint32_t tick) {
     dataBit = level;
 }
 
-int main(void){
-    setbuf(stdout, NULL);
+int main(void *args){
+  
     // Creating socket file descriptor 
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
@@ -169,6 +175,22 @@ int main(void){
        exit(1);
     }
 
+    // haptic waveform - just a simple on-off pulse
+    gpioSetMode(HAPTIC_PIN, PI_OUTPUT);
+    gpioPulse_t pulse[2];
+    pulse[0].gpioOn = (1<<HAPTIC_PIN);
+    pulse[0].gpioOff = 0;
+    pulse[0].usDelay = 8000;
+
+    pulse[1].gpioOn = 0;
+    pulse[1].gpioOff = (1<<HAPTIC_PIN);
+    pulse[1].usDelay = 2000;
+
+    gpioWaveAddNew();
+
+    gpioWaveAddGeneric(2, pulse);
+
+    hapticWaveId = gpioWaveCreate();
     gpioSetPullUpDown(CLOCK_PIN, PI_PUD_UP);
     gpioSetPullUpDown(DATA_PIN, PI_PUD_UP);
     gpioSetAlertFunc(CLOCK_PIN, onClockEdge);
