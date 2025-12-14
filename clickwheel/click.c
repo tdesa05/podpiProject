@@ -73,9 +73,9 @@ void printBinary(uint32_t value) {
 
 // parse packet and broadcast data
 void sendPacket() {
-    if ((bits & PACKET_START) != PACKET_START) {
-        return;
-    }
+    //if ((bits & PACKET_START) != PACKET_START) {
+    //    return;
+    //}
     for (size_t i = 0; i < BUFFER_SIZE; i++) {
         buffer[i] = -1;
     }
@@ -152,7 +152,7 @@ void onDataEdge(int gpio, int level, uint32_t tick) {
 }
 
 int main(void){
-  
+    setbuf(stdout, NULL);
     // Creating socket file descriptor 
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
