@@ -8,7 +8,7 @@ from controls import Controls
 from memory import memory
 from playback import Playback
 from files import Files
-from spotify import Spotify
+#from spotify import Spotify
 
 
 # Set appearance and theme
