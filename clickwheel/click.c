@@ -151,7 +151,7 @@ void onDataEdge(int gpio, int level, uint32_t tick) {
     dataBit = level;
 }
 
-int main(void *args){
+int main(void){
   
     // Creating socket file descriptor 
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
