@@ -135,24 +135,23 @@ void sendPacket() {
 }
 
 void onClockEdge(int gpio, int level, uint32_t tick) {
+    // DEBUG: Print purely to prove wiring is working
+    printf("CLOCK SIGNAL DETECTED! Level: %d\n", level); 
+    
     if (!level) {
-        // Only care about rising edge
         return;
     }
 
-    // Packet start detection: Data line goes LOW while Clock is active
     if (dataBit == 0) {
         recording = 1;
         oneCount = 0;
     } else {
-        // 32 1's in a row means we're definitely not in the middle of a packet (Reset)
         if (++oneCount >= BIT_COUNT) {
             recording = 0;
             bitIndex = 0;
         }
     }
 
-    // In the middle of the packet
     if (recording == 1) {
         if (dataBit) {
             bits = setBit(bits, bitIndex);
@@ -160,16 +159,11 @@ void onClockEdge(int gpio, int level, uint32_t tick) {
             bits = clearBit(bits, bitIndex);
         }
 
-        // We've collected the whole packet (32 bits)
         if (++bitIndex == 32) {
             bitIndex = 0;
             sendPacket();
         }
     }
-}
-
-void onDataEdge(int gpio, int level, uint32_t tick) {
-    dataBit = level;
 }
 
 int main(void *args){
