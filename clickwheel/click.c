@@ -1,4 +1,4 @@
-// To compile on the pi (after installing pigpio):
+// Compile with:
 // gcc -Wall -pthread -o click click.c -lpigpio -lrt
 
 #include <pigpio.h>
@@ -31,17 +31,14 @@
 #define WHEEL_POSITION_INDEX 2
 
 // --- Globals ---
-// used to store the current packet
 uint32_t bits = 0;
-// used to store the previous full packet
 uint32_t lastBits = 0;
-
 uint8_t bitIndex = 0;
 uint8_t oneCount = 0;
 uint8_t recording = 0;
-// indicates whether the data pin is high or low
 uint8_t dataBit = 1;
 
+// Button mapping
 char buttons[] = { 
     CENTER_BUTTON_BIT, 
     LEFT_BUTTON_BIT, 
@@ -51,7 +48,6 @@ char buttons[] = {
     WHEEL_TOUCH_BIT
 };
 
-// all valid click wheel packets start with this
 const uint32_t PACKET_START = 0b01101;
 
 int sockfd; 
@@ -61,22 +57,11 @@ struct sockaddr_in servaddr;
 
 // --- Helper Functions ---
 
-void printBinary(uint32_t value) {
-    for(uint8_t i = 0; i < 32; i++) {
-        if (value & 1) printf("1");
-        else printf("0");
-        value >>= 1;
-    }
-    printf("\n");
-}
-
-// Function to set the kth bit of n 
-// FIXED: Removed (k-1) which caused undefined behavior
+// FIXED: Removed (k-1) to prevent undefined behavior
 uint32_t setBit(uint32_t n, int k) { 
     return (n | (1 << k)); 
 } 
   
-// Function to clear the kth bit of n 
 // FIXED: Removed (k-1)
 uint32_t clearBit(uint32_t n, int k) { 
     return (n & (~(1 << k))); 
@@ -84,49 +69,37 @@ uint32_t clearBit(uint32_t n, int k) {
 
 // --- Core Logic ---
 
-// Parse packet and broadcast data
 void sendPacket() {
-    // If the packet header doesn't match, ignore it (noise)
     if ((bits & PACKET_START) != PACKET_START) {
         return;
     }
 
     // Reset buffer
-    for (size_t i = 0; i < BUFFER_SIZE; i++) {
-        buffer[i] = -1;
-    }
+    memset(buffer, -1, BUFFER_SIZE);
     
     // Check buttons
     for (size_t i = 0; i < sizeof(buttons); i++) {
         char buttonIndex = buttons[i];
-        // Check for button PRESS (current bit is 1, previous was 0)
         if ((bits >> buttonIndex) & 1 && !((lastBits >> buttonIndex) & 1)) {
             buffer[BUTTON_INDEX] = buttonIndex;
             buffer[BUTTON_STATE_INDEX] = 1;
-            printf("Button pressed: %d\n", buttonIndex);
-        } 
-        // Check for button RELEASE (current bit is 0, previous was 1)
-        else if (!((bits >> buttonIndex) & 1) && (lastBits >> buttonIndex) & 1) {
+            printf("Button PRESSED: %d\n", buttonIndex);
+        } else if (!((bits >> buttonIndex) & 1) && (lastBits >> buttonIndex) & 1) {
             buffer[BUTTON_INDEX] = buttonIndex;
             buffer[BUTTON_STATE_INDEX] = 0;
-            printf("Button released: %d\n", buttonIndex);
+            printf("Button RELEASED: %d\n", buttonIndex);
         }
     }
 
     uint8_t wheelPosition = (bits >> 16) & 0xFF;
     buffer[WHEEL_POSITION_INDEX] = wheelPosition;
 
-    // Only send data if something changed
     if (memcmp(prev_buffer, buffer, BUFFER_SIZE) == 0) {
         return;
     }
 
-    // Debug print for position
-    // printf("Position: %d\n", wheelPosition);
-
     lastBits = bits;
 
-    // Send UDP packet
     sendto(sockfd, (const char *)buffer, BUFFER_SIZE, 
         MSG_CONFIRM, (const struct sockaddr *) &servaddr,  
             sizeof(servaddr)); 
@@ -134,13 +107,13 @@ void sendPacket() {
     memcpy(prev_buffer, buffer, BUFFER_SIZE);
 }
 
+// Ensure this function is defined BEFORE main
 void onClockEdge(int gpio, int level, uint32_t tick) {
-    // DEBUG: Print purely to prove wiring is working
-    printf("CLOCK SIGNAL DETECTED! Level: %d\n", level); 
-    
-    if (!level) {
-        return;
-    }
+    // --- DEBUG: SANITY CHECK ---
+    // If you see this print, wiring is GOOD. If not, wiring is BAD.
+    printf("CLOCK EDGE DETECTED: %d\n", level);
+
+    if (!level) return; // Only process rising edge
 
     if (dataBit == 0) {
         recording = 1;
@@ -166,37 +139,44 @@ void onClockEdge(int gpio, int level, uint32_t tick) {
     }
 }
 
-int main(void *args){
+// Ensure this function is defined BEFORE main
+void onDataEdge(int gpio, int level, uint32_t tick) {
+    dataBit = level;
+}
+
+// FIXED: Changed 'void *args' to 'void' (Standard C)
+int main(void){
   
-    // --- Socket Setup ---
+    // Socket Setup
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
         exit(EXIT_FAILURE); 
     } 
   
     memset(&servaddr, 0, sizeof(servaddr)); 
-      
     servaddr.sin_family = AF_INET; 
     servaddr.sin_port = htons(PORT); 
     servaddr.sin_addr.s_addr = INADDR_ANY; 
 
-    // --- GPIO Setup ---
+    // GPIO Setup
     if (gpioInitialise() < 0) {
+       fprintf(stderr, "pigpio initialisation failed\n");
        exit(1);
     }
 
     gpioSetPullUpDown(CLOCK_PIN, PI_PUD_UP);
     gpioSetPullUpDown(DATA_PIN, PI_PUD_UP);
 
+    // Register interrupts
     gpioSetAlertFunc(CLOCK_PIN, onClockEdge);
     gpioSetAlertFunc(DATA_PIN, onDataEdge);
 
-    printf("Driver started on PORT %d\n", PORT);
+    printf("Driver started on PORT %d. Spin the wheel!\n", PORT);
 
-    // Keep program running efficiently
     while(1) {
-        sleep(1); // Sleep 1 second to save CPU (interrupts still work)
+        sleep(1); // Save CPU
     };
 
     gpioTerminate();
+    return 0;
 }
