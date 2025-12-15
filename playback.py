@@ -89,7 +89,7 @@ class Playback():
     # Get album art from folder of current song
     def get_album_art(self):
         supported_formats = ('.png', '.jpg')
-        album_path = os.path.dirname(memory.get_current_song())
+        album_path = os.path.dirname(memory.current_song)
         files = [name for name in os.listdir(album_path) if name.endswith(supported_formats)]
         try:
             art_path = album_path + '/' + files[0]
@@ -115,8 +115,8 @@ class Playback():
     
     # Check whether shuffle is enabled or not, then handle queue
     def check_shuffle(self):
-        if memory.get_shuffle():
-            shuffle = memory.get_shuffle()
+        if memory.shuffle:
+            shuffle = memory.shuffle
             old_list = self.media_list.get_media_list()
 
             # Extract all media items
@@ -144,26 +144,29 @@ class Playback():
         print("act")
         mrl = player.get_media_player().get_media().get_mrl()
         fp = url2pathname(urlparse(mrl).path)
-        if memory.get_current_song == fp:
+        if memory.current_song == fp:
             return
         else:
-            memory.set_current_song(fp)
+            memory.current_song = fp
             print(fp)
             #self.shuffle(self.media_library, False)
             # Statements to run no matter what
             self.progress_bar(fp)
             self.gui.update_text(self.get_title_artist(fp))
             self.gui.update_album_art(self.get_album_art())
-            memory.set_scroll_direction('left')
+            memory.scroll_direction = 'left'
             self.gui.update_idletasks()
             self.gui.scrolling_label(True)
 
+    def volume(self, increment):
+        pass
+    
     def on_pause(self, event):
         pass
 
     def on_end(self, event):
-        memory.set_previous_song(memory.get_previous_song())
-        print(memory.get_previous_song)
+        memory.previous_song = memory.previous_song
+        print(memory.previous_song)
 
     # Shuffle a folder of music
     def shuffle(self, folder, queue:bool):

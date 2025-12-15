@@ -1,7 +1,7 @@
 // Compile: gcc -Wall -pthread -o click click.c -lpigpio -lrt
 // Run:     sudo ./click
 
-#include <pigpio.h>
+#include <pigpio.h> 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> 

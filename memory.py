@@ -1,57 +1,57 @@
+import json
+import os
+
+
+DATA_FILE = "data.json"
 # Stores shared program memory
+# In other classes just call the variable like, memory.selected etc.
 class Memory():
     def __init__(self):
-        super().__init__()
-        self.selected:str = ""
+        self.selected:list = [] # File that user is currently hovering over
         self.current_path:str = "" # Current path in files (not current path of playing song)
+
+        # Saved variables
         self.current_song:str = "" # Current song playing
         self.previous_song:str = "" # Previous song played
-        self.scroll_direction:str = ""
-        self.scroll_x:float = 0
-        self.shuffle:bool = False
+        self.shuffle:bool = False # Whether or not shuffle is active
+        self.volume_lvl:int = 0 # Volume level
 
-    # Getter methods
-    def get_selected(self):
-        return self.selected
-    
-    def get_current_path(self):
-        return self.current_path
-
-    def get_current_song(self):
-        return self.current_song
-    
-    def get_previous_song(self):
-        return self.previous_song
-    
-    def get_scroll_direction(self):
-        return self.scroll_direction
-    
-    def get_scroll_x(self):
-        return self.scroll_x
-
-    def get_shuffle(self):
-        return self.shuffle
-    
-    # Setter methods
-    def set_selection(self, selected:str):
-        self.selected = str(selected)
-    
-    def set_current_path(self, current_path:str):
-        self.current_path = str(current_path)
-
-    def set_current_song(self, current_song:str):
-        self.current_song = str(current_song)
-    
-    def set_previous_song(self, previous_song:str):
-        self.previous_song = str(previous_song)
-    
-    def set_scroll_direction(self, scroll_direction:str):
-        self.scroll_direction = str(scroll_direction)
-    
-    def set_scroll_x(self, scroll_x:float):
-        self.scroll_x = float(scroll_x)
-
-    def set_shuffle(self, shuffle:bool):
-        self.shuffle = bool(shuffle)
+        self.scroll_direction:str = "" # Direction text is moving in
+        self.scroll_x:float = 0 # Position of text (x-axis) 
         
+        self.load() # Load saved data on launch
+
+    # Turns memory variables into dictionary
+    def to_dict(self):
+        return {
+            "current_song": self.current_song,
+            "previous_song": self.previous_song,
+            "shuffle": self.shuffle,
+            "volume_lvl": self.volume_lvl
+        }
+    
+    # Save current variables into dictionary for json file
+    def save(self):
+        try:
+            with open(DATA_FILE, 'w') as f:
+                # Dumps current data as dict form into json file
+                data = json.dump(self.to_dict(), f, indent = 4)
+        except Exception as e:
+            print(f"Error saving current data: {e}")
+
+    # Load json file, set variables to dictionary
+    def load(self):
+        if not os.path.exists(DATA_FILE):
+            return # If data file not existent, return
+        try:
+            with open(DATA_FILE,'r') as f: # Open json in read mode, as variable f
+                data = json.load(f)
+                # Update variables safely (using .get avoids crash if key missing)
+                self.current_song = data.get("current_song", "")
+                self.previous_song = data.get("previous_song", "")
+                self.shuffle = data.get("shuffle", False)
+                self.volume_lvl = data.get("volume_lvl", 0)
+        except Exception as e:
+            print(f"Error loading saved data: {e}")
+
 memory = Memory()

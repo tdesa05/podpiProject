@@ -45,8 +45,11 @@ class Gui(ctk.CTk):
         # Jobs (running processes)
         self.scroll_job = None
 
+        # Widgets
+        self.song_widgets = []
+
         # Bind controls
-        self.bind('<Key>', self.controls.recieve_input)
+        self.bind('<Key>', self.controls.keyboard_input)
 
         # Fonts
         self.title_font = ctk.CTkFont(family = "Myriad", size = 12, weight = "bold")
@@ -248,18 +251,19 @@ class Gui(ctk.CTk):
 
     # Add items to scrollable frame
     def add_to_frame(self, folder):
+        self.song_widgets.clear()
         self.clear_frame()
         files = self.files.iterate_files(folder) # Tuple (List of files, directory)
-        memory.set_current_path(files[1])
+        memory.current_path = files[1]
         # Iterate through files in directory
         for i, f in enumerate(files[0]):
             # Path of file
             full_path = files[1] + '/' + f
-            memory.set_current_song(files[0][i])
+            memory.current_song = files[0][i]
             # Interpret files
-            file_info = self.files.check_directory(i, f, full_path)
+            file_info = self.files.check_directory(f, full_path)
             # Song or directory
-            if file_info[2]:
+            if file_info[1]:
                 command = lambda fp = full_path: self.playback.recieve_song(fp, "play")
             else:
                 command = lambda fp = full_path: self.add_to_frame(fp) 
@@ -270,7 +274,7 @@ class Gui(ctk.CTk):
                                     height = 8, 
                                     fg_color = "transparent",
                                     hover_color = highlightPurple,
-                                    text = file_info[1],
+                                    text = file_info[0],
                                     text_color = "white",
                                     font = self.body_font,
                                     corner_radius = 0,
@@ -279,7 +283,12 @@ class Gui(ctk.CTk):
                                     anchor = "w",
                                     command = command   # Refers to previously created lambda function (play or add to frame)
                                     )
-            entry.grid(row=file_info[0], column=1, pady=0, padx=2, sticky="ew")
+            entry.grid(column=1, pady=0, padx=2, sticky="ew")
+            self.song_widgets.append(entry)
+        try:
+            memory.selected = [0, self.song_widgets[0].cget("text")]
+        except Exception as e:
+            print(f"Failed to initialise memory.selected: {e}")
 
     # Updates image to album art of current directory
     def update_album_art(self, art_path):
@@ -327,14 +336,14 @@ class Gui(ctk.CTk):
     def scrolling_label(self, reset = False):
         text_width = self.song_title.winfo_width()
         frame_width = self.song_title_frame.winfo_width()
-        scroll_direction = memory.get_scroll_direction()
-        x = memory.get_scroll_x()
+        scroll_direction = memory.scroll_direction
+        x = memory.scroll_x
 
         if reset and self.scroll_job != None:
             self.after_cancel(self.scroll_job) # Scroll job ensures only on 'after' is active
             self.scroll_job = None
             self.song_title.place(x = 250/2, y = 20/2, anchor = 'center')
-            memory.set_scroll_x(0)
+            memory.scroll_x = 0
 
 
         # When to change direction 
@@ -350,9 +359,9 @@ class Gui(ctk.CTk):
             if scroll_direction == 'left':
                 x -= 0.5
                 self.song_title.place(x = x, y = 20/2, anchor = 'w')
-                memory.set_scroll_x(x)
+                memory.scroll_x = x
                 if x <= end_target: # Reverse direction when second half of title shown
-                    memory.set_scroll_direction('right')
+                    memory.scroll_direction = 'right'
                     self.scroll_job = self.after(1500, lambda: self.scrolling_label())
                     return
 
@@ -360,9 +369,44 @@ class Gui(ctk.CTk):
             elif scroll_direction == 'right':
                 x += 0.5
                 self.song_title.place(x = x, y = 20/2, anchor = 'w')
-                memory.set_scroll_x(x)
+                memory.scroll_x = x
                 if x >= start_target:
-                    memory.set_scroll_direction('left')
+                    memory.scroll_direction = 'left'
                     self.scroll_job = self.after(1500, lambda: self.scrolling_label())
                     return # Otherwise speeds up crazy
             self.scroll_job = self.after(24, lambda: self.scrolling_label())
+
+    # Updates gui dependent on user's current location and input
+    def cw_interaction(self, diff):
+        tab = self.navbar.get() # We do this here, as would cause issues calling in controls.py as it runs on another thread
+
+        if tab == "Playback":
+            if diff > 0:
+                self.playback.volume(1)
+                # Add volume bar or that appears of side of screen (or make progress bar show volume whilst active?)
+            else:
+                self.playback.volume(-1)
+        elif tab == "Files":
+            if memory.selected == []:
+                try: # Tries to set selected to first in list
+                    memory.selected = [0, self.song_widgets[0].cget("text")]
+                except Exception as e:
+                    print(f"Failed to initialise memory.selected: {e}")
+            if diff > 0: # Tries to set selected to next in list, selected remains same if it cant
+                self.song_widgets[memory.selected[0]].configure(hover = False)
+                try:
+                    index = memory.selected[0] + 1 # Go to next item in list
+                    memory.selected = [index, self.song_widgets[index].get("text")]
+                    print(memory.selected[1])
+                except Exception as e:
+                    pass
+                self.song_widgets[memory.selected[0]].configure(hover = True)
+            else:
+                self.song_widgets[memory.selected[0]].configure(hover = False)
+                try:
+                    index = memory.selected[0] - 1 # Go to previous item in list
+                    memory.selected = [index, self.song_widgets[index].get("text")]
+                    print(memory.selected[1])
+                except Exception as e:
+                    pass
+                self.song_widgets[memory.selected[0]].configure(hover = True)

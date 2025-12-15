@@ -19,25 +19,23 @@ class Files():
         relpath = self.root + relpath
         return files, relpath
 
-    def check_directory(self, i, f, full_path):
-        pos = i # If a folder, row position will just be order folder is read
+    def check_directory(self, f, full_path):
+        # If a folder, row position will just be order folder is read
         title = f # If a folder, use default title
 
         # Handle whether file is folder (go into directory) or if audio (play in VLC)
         if f.endswith(".flac") or f.endswith(".mp3"):
             if f.endswith(".flac"):
                 audio = FLAC(full_path) # Metadata dictionary
-                pos = i
                 title = str(audio["TITLE"]).strip("{}[]'")
                 song = True
             else: 
                 audio = MP3(full_path)
-                pos = i
                 title = str(audio["TITLE"]).strip("{}[]'")
                 song = True
         else:
            song = False
-        return pos, title, song # Position to be placed, metadata title, song or directory (True/False)
+        return title, song # Position to be placed, metadata title, song or directory (True/False)
         
     # Searches folder for songs and directories, returns these songs, whether more searching is required and the directories to search
     def fetch_songs(self, folder_contents:list, folder_directory:str):

@@ -1,5 +1,6 @@
 from memory import memory
 import socket
+import threading
 
 # Gemini AI heavily helped with implementation of clickwheel components, based on Dupont's driver
 
@@ -8,14 +9,14 @@ UDP_IP = "127.0.0.1" # Listen to localhost
 UDP_PORT = 9090      # Same port as C driver
 last_wheel_pos = -1
 
-# Button mapping of click wheel
+# Button mapping of click wheel (names used)
 BUTTON_MAP = {
     8:  "CENTER",
-    12: "MENU (UP)",
-    11: "PLAY/PAUSE (DOWN)",
-    10: "PREV (LEFT)",
-    9:  "NEXT (RIGHT)",
-    29: "TOUCH (Surface)"
+    12: "MENU",
+    11: "PLAY",
+    10: "PREV",
+    9:  "NEXT",
+    29: "TOUCH"
 }
 
 # Interprets controls based on signals from main.py
@@ -24,24 +25,34 @@ class Controls():
         super().__init__()
         self.gui = gui # When another file calls this file and its functions, its passing in its whole object reference
         self.playback = playback
-    # Recieve and interpret input (eventually used for physical buttons)
-    def recieve_input(self, event):
+
+        # A flag to control pausing. 
+        # set() = Running (True)
+        # clear() = Paused (False)
+        self.is_running = threading.Event()
+        self.is_running.set()  # Start as "Running"
+        
+        # A flag to kill the thread completely when app closes
+        self.should_exit = False
+
+    # Recieve and interpret input using keyboard
+    def keyboard_input(self, event):
         print(event.keysym)
         if event.keysym == 'BackSpace':
             if self.gui.navbar.get() == 'Files':
-                old_path = memory.get_current_path()
+                old_path = memory.current_path
                 if old_path.endswith('/MusicLibrary'):
                     return
                 else:
                     new_path = old_path.rsplit("/", 1)[0]
-                    memory.set_current_path(new_path)
+                    memory.current_path = new_path
                     self.gui.add_to_frame(new_path)
             else:
                 pass
         elif event.keysym == 'space':
             self.playback.song_action('pause')
         elif event.keysym == 'q':
-            shuffle = memory.get_shuffle()
+            shuffle = memory.shuffle
             if shuffle:
                 shuffle = False
             else:
@@ -52,14 +63,42 @@ class Controls():
         elif event.keysym == 'z':
             self.playback.song_action('shuffle')
 
+    # Pauses clickwheel input
+    def pause_input(self):
+        print("Clickwheel Paused")
+        self.is_running.clear()
 
-    # Interprets data driver hosts on ip and port, sends relevant commands to interface
+    # Resumes clickwheel input
+    def resume_input(self):
+        print("Clickwheel Resumed")
+        self.is_running.set()
+
+    # Shuts down cw_handler function
+    def stop_thread(self):
+        self.should_exit = True
+
+    # Handles button presses of clickwheel
+    def cw_button(self, btn_name, state_str):
+        pass
+
+
+    # FUNCTION CAN NOT BE MANUALLY CALLED, USE OTHER FUNCTIONS TO STOP/START
+    # Interprets data driver hosts on ip and port, triggers appropriate functions
     def cw_handler(self):
         # Create socket and bind to the ip + port
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind((UDP_IP, UDP_PORT))
-        try:
-            while True:
+        # Set timeout once every 100ms so loop doesnt freeze
+        sock.settimeout(0.1)
+
+        while not self.should_exit:
+            # Check if paused
+            if not self.is_running.is_set():
+                # Sleep and skip logic
+                self.is_running.wait(timeout=0.1) 
+                continue
+
+            try:
                 # Buffer size is 3 because the C driver sends exactly 3 bytes
                 data, addr = sock.recvfrom(3) 
 
@@ -74,13 +113,33 @@ class Controls():
                     btn_name = BUTTON_MAP.get(btn_id, f"Unknown ({btn_id})")
                     state_str = "PRESSED" if btn_state == 1 else "RELEASED"
                     print(f"[BUTTON] {btn_name} : {state_str}")
+                    self.cw_button(btn_name, state_str) # Call function to handle input
+
 
                 # --- Handle Wheel ---
-                # You can add logic here to compare this to the 'last_pos'
-                # to determine if it moved Clockwise or Counter-Clockwise
                 print(f"[WHEEL]  Position: {wheel_pos}")
 
-        except KeyboardInterrupt:
-            print("\nExiting...")
-        finally:
-            sock.close()
+                # Initialise first wheel pos
+                if last_wheel_pos == -1:
+                    last_wheel_pos = wheel_pos
+
+                diff = wheel_pos - last_wheel_pos
+
+                # Safety to ensure massive movements aren't recorded wrong
+                # As the wheel is 0-256, this negates the chances of diff equalling number outside that range.
+                if diff > 200: # Moved clockwise a large amount
+                    diff -= 256 
+                elif diff < -200:
+                    diff += 256
+
+                if diff != 0:
+                    # Have to use self.gui.after in order to call functions in other gui class, that updates tkinter widgets
+                    # This ensures program calls function when safe to do so, tkinter is in charge
+                    self.gui.after(0, self.gui.cw_interaction(diff))
+
+            except socket.timeout:
+                continue
+            except Exception as e:
+                print(f"Error: {e}")
+                break
+        sock.close()
