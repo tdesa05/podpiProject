@@ -79,7 +79,17 @@ class Controls():
 
     # Handles button presses of clickwheel
     def cw_button(self, btn_name, state_str):
-        pass
+        if btn_name == "CENTER":
+            pass # Will access the command of selected button (memory selected button)
+        elif btn_name == "MENU":
+            self.gui.navbar.set("Files")
+        elif btn_name == "PLAY":
+            self.playback.song_action('play')
+        elif btn_name == "PREV":
+            self.playback.song_action('back')
+        elif btn_name == "NEXT":
+            self.playback.song_action('skip')
+
 
 
     # FUNCTION CAN NOT BE MANUALLY CALLED, USE OTHER FUNCTIONS TO STOP/START
