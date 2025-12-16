@@ -11,6 +11,7 @@ from files import Files
 # Run the application
 if __name__ == "__main__":
     gui = Gui()
+    memory = memory
     playback = Playback(gui)
     controls = Controls(gui, playback)
     files = Files(gui)
@@ -23,5 +24,5 @@ if __name__ == "__main__":
     
     # 2. Start the thread (This runs in the background immediately)
     cw_thread.start()
-    
+
     gui.mainloop()

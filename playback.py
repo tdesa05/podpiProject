@@ -29,6 +29,14 @@ class Playback():
         player_events.event_attach(vlc.EventType.MediaPlayerPlaying, lambda event: self.on_play(event)) # type: ignore
         #player_events.event_attach(vlc.EventType.MediaPlayerPaused, self.on_pause) # type: ignore
         player_events.event_attach(vlc.EventType.MediaPlayerEndReached, lambda event: self.on_end(event)) # type: ignore
+        
+        # Load media list stored from last instance
+        self.load_media_list()
+
+    def load_media_list(self):
+        for fp in memory.song_list:
+            media = instance.media_new(fp) # type: ignore
+            self.media_list.add_media(media)
 
     def reset_media_list(self):
         self.media_list = instance.media_list_new() # type: ignore
@@ -44,19 +52,22 @@ class Playback():
         elif action == 'back':
             player.previous()
         elif action == 'shuffle':
-            self.shuffle(self.media_library, False)
+            self.library_shuffle(self.media_library, False)
 
 
 
     # Handles audio playback based on given parameters
     def recieve_song(self, fp:str = "", option:str = "play"): # fp is songs path, option is what to do with song file
+        # Save last played song
+        memory.previous_song = memory.current_song
+        memory.save()
         print("Song recieved")
         if option == "queue":
             # ADD AN IF TO SEE IF LIST CONTAINS ANY FILES FIRST (SO THE QUEUE BUTTON WORKS EVEN WHEN IT SHOULDNT)
+            memory.song_list.append(fp)
             media = instance.media_new(fp) # type: ignore
-            self.media_list.add_media(self.media_list) # Add media to list
+            self.media_list.add_media(media) # Add media to list
             print(fp, "Queued")
-            player.next() # Skip to next song (REMOVE ONLY FOR DEBUGGING)
         elif option == "play":
             if fp.startswith('file:'):
                 print("butt")
@@ -72,6 +83,7 @@ class Playback():
                 if self.gui.navbar.get() != "Playback":
                     print("Switched to Playback tab")
                     self.gui.navbar.set("Playback")
+        memory.save()
 
 
     # Get artist name from metadata of current song
@@ -116,7 +128,7 @@ class Playback():
     # Check whether shuffle is enabled or not, then handle queue
     def check_shuffle(self):
         if memory.shuffle:
-            shuffle = memory.shuffle
+            print("Shuffled")
             old_list = self.media_list.get_media_list()
 
             # Extract all media items
@@ -135,13 +147,16 @@ class Playback():
             # Replace the existing list
             self.reset_media_list()
             self.media_list.set_media(new_list)
+            memory.shuffle = False
         else:
             # Un shuffle playback
-            print("unshuffle")
+            print("Unshuffled")
+
+            memory.shuffle = True
+        memory.save
 
     # Events for on_play NEED TO FIX FOR PICKING SONG
     def on_play(self, event): # 'event' required for the lambda, VLC doesn't like class functions
-        print("act")
         mrl = player.get_media_player().get_media().get_mrl()
         fp = url2pathname(urlparse(mrl).path)
         if memory.current_song == fp:
@@ -157,58 +172,52 @@ class Playback():
             memory.scroll_direction = 'left'
             self.gui.update_idletasks()
             self.gui.scrolling_label(True)
+        memory.save()
 
-    def volume(self, increment):
-        pass
+    def volume(self, increment:int):
+        current_volume = player.audio_get_volume()
+        new_volume = current_volume + increment
+
+        if (new_volume) > 100 or (new_volume) < 0:
+            new_volume = current_volume
+            print(f"Volume at upper/lower limit")
+
+        memory.volume_lvl = new_volume
+        player.audio_set_volume(new_volume)
+        memory.save()
     
     def on_pause(self, event):
         pass
 
     def on_end(self, event):
-        memory.previous_song = memory.previous_song
+        memory.previous_song = memory.current_song
         print(memory.previous_song)
+        memory.save()
 
     # Shuffle a folder of music
-    def shuffle(self, folder, queue:bool):
-        # Beginning of search (root library)
-        root_info = self.files.iterate_files(folder)
-        root_contents = root_info[0] # Index 0 is contents list, index 1 is path to directory
-        root_directory = root_info[1]
-        initial_fetch = self.files.fetch_songs(root_contents, root_directory)
+    def library_shuffle(self, folder, queue:bool):
+        songs = []
+        # Search (root library)
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if file.lower().endswith('.mp3', '.flac'):
+                    full_path = os.path.join(root, file)
+                    songs.append(full_path)
+        
+        if not songs:
+            print("No songs found in library!")
+            return
 
-        songs:list = initial_fetch[0]
-        continue_fetch = initial_fetch[1]
-        directories:list = initial_fetch[2]
-        new_directories:list = []
-
-        # Go into each directory until getting each songs
-        while continue_fetch:
-            for i in directories:
-                folder_info = self.files.iterate_files(i)
-                folder_contents = folder_info[0]
-                folder_directory = folder_info[1]
-                fetch = self.files.fetch_songs(folder_contents, folder_directory)
-                found_songs = fetch[0]
-                songs += found_songs
-                continue_fetch = fetch[1]
-                found_directories = fetch[2]
-                new_directories += found_directories
-            # Once all folders in directory are searched, update to new folders 
-            directories.clear()
-            directories += new_directories
-            new_directories.clear()
-
-
-        # Then shuffle this list of songs
         random.shuffle(songs)
 
-        # Set media list
+        # Create new media list, add each song from songs list to it
         new_media_list = instance.media_list_new() # type: ignore
         for fp in songs:
             media = instance.media_new(fp) # type: ignore
             new_media_list.add_media(media)
-        
-        if queue: # Allows control whether to skip to shuffle queue or let current song playout
+
+        if queue:
+            # Add each media item to end of current playback if in queue
             for i in range(new_media_list.count()):
                 self.media_list.add_media(new_media_list.item_at_index(i))
         else:
@@ -216,4 +225,3 @@ class Playback():
             self.reset_media_list()
             self.media_list = new_media_list
             player.set_media_list(self.media_list)
-            player.play()

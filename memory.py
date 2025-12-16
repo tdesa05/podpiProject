@@ -11,6 +11,7 @@ class Memory():
         self.current_path:str = "" # Current path in files (not current path of playing song)
 
         # Saved variables
+        self.song_list:list = [] # List of songs in player (paths)
         self.current_song:str = "" # Current song playing
         self.previous_song:str = "" # Previous song played
         self.shuffle:bool = False # Whether or not shuffle is active
@@ -24,6 +25,7 @@ class Memory():
     # Turns memory variables into dictionary
     def to_dict(self):
         return {
+            "song_list": self.song_list,
             "current_song": self.current_song,
             "previous_song": self.previous_song,
             "shuffle": self.shuffle,
@@ -47,6 +49,7 @@ class Memory():
             with open(DATA_FILE,'r') as f: # Open json in read mode, as variable f
                 data = json.load(f)
                 # Update variables safely (using .get avoids crash if key missing)
+                self.song_list = data.get("song_list", [])
                 self.current_song = data.get("current_song", "")
                 self.previous_song = data.get("previous_song", "")
                 self.shuffle = data.get("shuffle", False)

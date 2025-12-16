@@ -392,21 +392,25 @@ class Gui(ctk.CTk):
                     memory.selected = [0, self.song_widgets[0].cget("text")]
                 except Exception as e:
                     print(f"Failed to initialise memory.selected: {e}")
-            if diff > 0: # Tries to set selected to next in list, selected remains same if it cant
-                self.song_widgets[memory.selected[0]].configure(hover = False)
-                try:
-                    index = memory.selected[0] + 1 # Go to next item in list
-                    memory.selected = [index, self.song_widgets[index].get("text")]
-                    print(memory.selected[1])
-                except Exception as e:
-                    pass
-                self.song_widgets[memory.selected[0]].configure(hover = True)
-            else:
-                self.song_widgets[memory.selected[0]].configure(hover = False)
-                try:
-                    index = memory.selected[0] - 1 # Go to previous item in list
-                    memory.selected = [index, self.song_widgets[index].get("text")]
-                    print(memory.selected[1])
-                except Exception as e:
-                    pass
-                self.song_widgets[memory.selected[0]].configure(hover = True)
+                    return
+
+            # If there is songs in directory        
+            if len(self.song_widgets) > 0:
+                if diff > 0: # Tries to set selected to next in list, selected remains same if it cant
+                    self.song_widgets[memory.selected[0]].configure(hover = False)
+                    try:
+                        index = memory.selected[0] + 1 # Go to next item in list
+                        memory.selected = [index, self.song_widgets[index].get("text")]
+                        print(memory.selected[1])
+                    except Exception as e:
+                        pass
+                    self.song_widgets[memory.selected[0]].configure(hover = True)
+                else:
+                    self.song_widgets[memory.selected[0]].configure(hover = False)
+                    try:
+                        index = memory.selected[0] - 1 # Go to previous item in list
+                        memory.selected = [index, self.song_widgets[index].get("text")]
+                        print(memory.selected[1])
+                    except Exception as e:
+                        pass
+                    self.song_widgets[memory.selected[0]].configure(hover = True)
