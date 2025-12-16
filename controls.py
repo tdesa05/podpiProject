@@ -7,7 +7,6 @@ import threading
 # --- Configuration ---
 UDP_IP = "127.0.0.1" # Listen to localhost
 UDP_PORT = 9090      # Same port as C driver
-last_wheel_pos = -1
 
 # Button mapping of click wheel (names used)
 BUTTON_MAP = {
@@ -100,7 +99,7 @@ class Controls():
         sock.bind((UDP_IP, UDP_PORT))
         # Set timeout once every 100ms so loop doesnt freeze
         sock.settimeout(0.1)
-
+        last_wheel_pos = -1
         while not self.should_exit:
             # Check if paused
             if not self.is_running.is_set():
@@ -123,7 +122,7 @@ class Controls():
                     btn_name = BUTTON_MAP.get(btn_id, f"Unknown ({btn_id})")
                     state_str = "PRESSED" if btn_state == 1 else "RELEASED"
                     print(f"[BUTTON] {btn_name} : {state_str}")
-                    self.cw_button(btn_name, state_str) # Call function to handle input
+                    self.gui.after(0, self.cw_button, btn_name, state_str) # As it can change GUI
 
 
                 # --- Handle Wheel ---
@@ -132,6 +131,7 @@ class Controls():
                 # Initialise first wheel pos
                 if last_wheel_pos == -1:
                     last_wheel_pos = wheel_pos
+                    continue
 
                 diff = wheel_pos - last_wheel_pos
 
@@ -145,8 +145,10 @@ class Controls():
                 if diff != 0:
                     # Have to use self.gui.after in order to call functions in other gui class, that updates tkinter widgets
                     # This ensures program calls function when safe to do so, tkinter is in charge
-                    self.gui.after(0, self.gui.cw_interaction(diff))
+                    self.gui.after(0, self.gui.cw_interaction, diff) # Safe call when touching GUI
 
+                last_wheel_pos = wheel_pos
+                
             except socket.timeout:
                 continue
             except Exception as e:
