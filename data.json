@@ -1,7 +1,9 @@
 {
-    "song_list": [],
-    "current_song": "/Users/tylerdesa/VSCODE/typodpi/MusicLibrary/Bruno Mars/Unorthodox Jukebox [2012]/03 Gorilla.flac",
-    "previous_song": "/Users/tylerdesa/VSCODE/typodpi/MusicLibrary/Bruno Mars/Unorthodox Jukebox [2012]/08 Show Me.flac",
+    "song_list": [
+        
+    ],
+    "current_song": "",
+    "previous_song": "",
     "shuffle": "False",
     "volume_lvl": 10
 }

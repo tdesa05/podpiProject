@@ -37,6 +37,9 @@ class Playback():
         for fp in memory.song_list:
             media = instance.media_new(fp) # type: ignore
             self.media_list.add_media(media)
+            player.set_media_list(self.media_list)
+            player.play()
+            player.pause()
 
     def reset_media_list(self):
         self.media_list = instance.media_list_new() # type: ignore
@@ -59,6 +62,7 @@ class Playback():
     # Handles audio playback based on given parameters
     def recieve_song(self, fp:str = "", option:str = "play"): # fp is songs path, option is what to do with song file
         # Save last played song
+        memory.song_list.clear()
         memory.previous_song = memory.current_song
         memory.save()
         print("Song recieved")
@@ -72,14 +76,37 @@ class Playback():
             if fp.startswith('file:'):
                 print("butt")
             else:
+                songs = []
+                song_index = None
                 player.stop() # Stop playback
                 self.reset_media_list()
-                media = instance.media_new(fp) # type: ignore
-                self.media_list.add_media(media) # Add song
-                player.set_media_list(self.media_list) # Add song to player
 
+                # Find all songs in directory
+                for root, dirs, files in os.walk(memory.current_path):
+                    for file in files:
+                        if file.lower().endswith(('.mp3', '.flac')):
+                            full_path = os.path.join(root, file)
+                            songs.append(full_path)
+                
+                songs.sort()
+                
+                # Create list from songs within directory
+                for index, full_path in enumerate(songs):
+                    if full_path == fp:
+                        song_index = index
+                    media = instance.media_new(full_path) # type: ignore
+                    self.media_list.add_media(media) # Add song
+                    memory.song_list.append(full_path)
+
+                player.set_media_list(self.media_list) # Add song to player
+                
                 print("Beginning playback for song ", fp)
-                player.play() # Play song
+
+                # Start playback from chosen song
+                if player.play_item_at_index(song_index) == 0: # 0 on success, -1 on failure
+                    print(f"Skipped to index {song_index} (Success)")
+                else:
+                    print(f"Failed to skip to index {song_index}")
                 if self.gui.navbar.get() != "Playback":
                     print("Switched to Playback tab")
                     self.gui.navbar.set("Playback")
@@ -200,7 +227,7 @@ class Playback():
         # Search (root library)
         for root, dirs, files in os.walk(folder):
             for file in files:
-                if file.lower().endswith('.mp3', '.flac'):
+                if file.lower().endswith(('.mp3', '.flac')):
                     full_path = os.path.join(root, file)
                     songs.append(full_path)
         
