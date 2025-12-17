@@ -97,6 +97,7 @@ class Controls():
         # Create socket and bind to the ip + port
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind((UDP_IP, UDP_PORT))
+        print(sock)
         # Set timeout once every 100ms so loop doesnt freeze
         sock.settimeout(0.1)
         last_wheel_pos = -1
@@ -147,6 +148,7 @@ class Controls():
                     # This ensures program calls function when safe to do so, tkinter is in charge
                     self.gui.after(0, self.gui.cw_interaction, diff) # Safe call when touching GUI
 
+                print(wheel_pos)
                 last_wheel_pos = wheel_pos
                 
             except socket.timeout:

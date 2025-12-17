@@ -1,9 +1,17 @@
 {
     "song_list": [
-        
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/01 Watching Her Move.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/02 Faded.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/03 Take the Long Way Home.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/04 Ladies Is Pimps To.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/05 Where Did She Go.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/06 Lost.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/07 Lights.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/08 Rest.flac",
+        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/09 Turn Around.flac"
     ],
-    "current_song": "",
-    "previous_song": "",
+    "current_song": "MusicLibrary/Bruno Mars/Earth to Mars [2011]/01 Watching Her Move.flac",
+    "previous_song": "MusicLibrary/Bruno Mars/Earth to Mars [2011]/01 Watching Her Move.flac",
     "shuffle": "False",
     "volume_lvl": 10
 }
