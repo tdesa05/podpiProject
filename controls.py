@@ -148,7 +148,6 @@ class Controls():
                     # This ensures program calls function when safe to do so, tkinter is in charge
                     self.gui.after(0, self.gui.cw_interaction, diff) # Safe call when touching GUI
 
-                print(wheel_pos)
                 last_wheel_pos = wheel_pos
                 
             except socket.timeout:

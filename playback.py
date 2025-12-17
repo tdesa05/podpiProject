@@ -38,8 +38,6 @@ class Playback():
             media = instance.media_new(fp) # type: ignore
             self.media_list.add_media(media)
             player.set_media_list(self.media_list)
-            player.play()
-            player.pause()
 
     def reset_media_list(self):
         self.media_list = instance.media_list_new() # type: ignore
@@ -73,7 +71,7 @@ class Playback():
                 current_index = self.media_list.index_of_item(memory.current_song)
             except Exception as e:
                 print(f"No songs currently in list")
-                
+
             # Insert queued song to play next
             memory.song_list.insert(current_index + 1, fp)
             media = instance.media_new(fp) # type: ignore

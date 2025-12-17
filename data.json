@@ -1,17 +1,19 @@
 {
     "song_list": [
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/01 Watching Her Move.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/02 Faded.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/03 Take the Long Way Home.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/04 Ladies Is Pimps To.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/05 Where Did She Go.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/06 Lost.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/07 Lights.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/08 Rest.flac",
-        "MusicLibrary/Bruno Mars/Earth to Mars [2011]/09 Turn Around.flac"
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/01 Changes.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/02 Oh! You Pretty Things.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/03 Eight Line Poem.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/04 Life on Mars_.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/05 Kooks.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/06 Quicksand.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/07 Fill Your Heart.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/08 Andy Warhol.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/09 Song for Bob Dylan.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/10 Queen Bitch.flac",
+        "MusicLibrary/David Bowie/Hunky Dory [1971]/11 The Bewlay Brothers.flac"
     ],
-    "current_song": "MusicLibrary/Bruno Mars/Earth to Mars [2011]/01 Watching Her Move.flac",
-    "previous_song": "MusicLibrary/Bruno Mars/Earth to Mars [2011]/01 Watching Her Move.flac",
+    "current_song": "MusicLibrary/David Bowie/Hunky Dory [1971]/11 The Bewlay Brothers.flac",
+    "previous_song": "11 The Bewlay Brothers.flac",
     "shuffle": "False",
     "volume_lvl": 10
 }
