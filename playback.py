@@ -187,7 +187,7 @@ class Playback():
         memory.save()
 
     def volume(self, increment:int):
-        current_volume = player.audio_get_volume()
+        current_volume = self.internal_player.audio_get_volume()
         new_volume = current_volume + increment
 
         if (new_volume) > 100 or (new_volume) < 0:
@@ -195,7 +195,7 @@ class Playback():
             print(f"Volume at upper/lower limit")
 
         memory.volume_lvl = new_volume
-        player.audio_set_volume(new_volume)
+        self.internal_player.audio_set_volume(new_volume)
         memory.save()
     
     def on_pause(self, event):

@@ -26,6 +26,7 @@ class Controls():
         self.gui = gui # When another file calls this file and its functions, its passing in its whole object reference
         self.playback = playback
         self.last_button_time = 0  # Tracks last time button was pressed
+        self.last_touch_time = 0 # Last time wheel was touched
 
         # A flag to control pausing. 
         # set() = Running (True)
@@ -133,6 +134,7 @@ class Controls():
                         state_str = "PRESSED" if btn_state == 1 else "RELEASED"
                         print(f"[BUTTON] {btn_name} : {state_str}")
                         self.gui.after(0, self.cw_button, btn_name, state_str) # As it can change GUI
+                        self.last_button_time = current_time
                     else:
                         pass # Silently ignore input if last press was within 150ms
 
@@ -144,7 +146,7 @@ class Controls():
                 if last_wheel_pos == -1:
                     last_wheel_pos = wheel_pos
                     continue
-
+                
                 diff = wheel_pos - last_wheel_pos
 
                 # Safety to ensure massive movements aren't recorded wrong
@@ -155,10 +157,12 @@ class Controls():
                     diff += 256
 
                 if diff != 0:
-                    # Have to use self.gui.after in order to call functions in other gui class, that updates tkinter widgets
-                    # This ensures program calls function when safe to do so, tkinter is in charge
-                    self.gui.after(0, self.gui.cw_interaction, diff) # Safe call when touching GUI
-
+                    current_time = time.time()
+                    if current_time - self.last_touch_time > 0.05:
+                        # Have to use self.gui.after in order to call functions in other gui class, that updates tkinter widgets
+                        # This ensures program calls function when safe to do so, tkinter is in charge
+                        self.gui.after(0, self.gui.cw_interaction, diff) # Safe call when touching GUI
+                        self.last_touch_time = current_time
                 last_wheel_pos = wheel_pos
                 
             except socket.timeout:
