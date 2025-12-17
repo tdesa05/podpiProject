@@ -1,6 +1,7 @@
 from memory import memory
 import socket
 import threading
+import time
 
 # Gemini AI heavily helped with implementation of clickwheel components, based on Dupont's driver
 
@@ -24,6 +25,7 @@ class Controls():
         super().__init__()
         self.gui = gui # When another file calls this file and its functions, its passing in its whole object reference
         self.playback = playback
+        self.last_button_time = 0  # Tracks last time button was pressed
 
         # A flag to control pausing. 
         # set() = Running (True)
@@ -120,10 +122,15 @@ class Controls():
                 # --- Handle Buttons ---
                 # The C driver sends 255 (0xFF) if no button event occurred in this packet
                 if btn_id != 255:
-                    btn_name = BUTTON_MAP.get(btn_id, f"Unknown ({btn_id})")
-                    state_str = "PRESSED" if btn_state == 1 else "RELEASED"
-                    print(f"[BUTTON] {btn_name} : {state_str}")
-                    self.gui.after(0, self.cw_button, btn_name, state_str) # As it can change GUI
+                    current_time = time.time()
+
+                    if current_time - self.last_button_time > 0.15: # 150ms between presses
+                        btn_name = BUTTON_MAP.get(btn_id, f"Unknown ({btn_id})")
+                        state_str = "PRESSED" if btn_state == 1 else "RELEASED"
+                        print(f"[BUTTON] {btn_name} : {state_str}")
+                        self.gui.after(0, self.cw_button, btn_name, state_str) # As it can change GUI
+                    else:
+                        pass # Silently ignore input if last press was within 150ms
 
 
                 # --- Handle Wheel ---
