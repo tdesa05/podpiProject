@@ -22,8 +22,11 @@ titleBlack = "#161617"
 bodyGrey = "#f5f2f2"
 bodyBlack = "#221f24"
 
+# Hover colours / signifies selected
 highlightBlue = "#2394fc"
 highlightPurple = "#7402de"
+
+# Stock album art prior to choosing any song
 albumArtPH = ctk.CTkImage(dark_image = Image.open("images/summertime_lovin.jpg"),
                             size = (120, 120))
 
@@ -273,7 +276,6 @@ class Gui(ctk.CTk):
                                     width = 320, 
                                     height = 8, 
                                     fg_color = "transparent",
-                                    hover_color = highlightPurple,
                                     text = file_info[0],
                                     text_color = "white",
                                     font = self.body_font,
@@ -281,6 +283,7 @@ class Gui(ctk.CTk):
                                     border_width = 0,
                                     border_color = "white",
                                     anchor = "w",
+                                    hover = False,
                                     command = command   # Refers to previously created lambda function (play or add to frame)
                                     )
             entry.grid(column=1, pady=0, padx=2, sticky="ew")
@@ -386,31 +389,42 @@ class Gui(ctk.CTk):
                 # Add volume bar or that appears of side of screen (or make progress bar show volume whilst active?)
             else:
                 self.playback.volume(-1)
-        elif tab == "Files":
-            if memory.selected == []:
-                try: # Tries to set selected to first in list
-                    memory.selected = [0, self.song_widgets[0].cget("text")]
-                except Exception as e:
-                    print(f"Failed to initialise memory.selected: {e}")
-                    return
 
-            # If there is songs in directory        
-            if len(self.song_widgets) > 0:
-                if diff > 0: # Tries to set selected to next in list, selected remains same if it cant
-                    self.song_widgets[memory.selected[0]].configure(hover = False)
-                    try:
-                        index = memory.selected[0] + 1 # Go to next item in list
-                        memory.selected = [index, self.song_widgets[index].get("text")]
-                        print(memory.selected[1])
-                    except Exception as e:
-                        pass
-                    self.song_widgets[memory.selected[0]].configure(hover = True)
-                else:
-                    self.song_widgets[memory.selected[0]].configure(hover = False)
-                    try:
-                        index = memory.selected[0] - 1 # Go to previous item in list
-                        memory.selected = [index, self.song_widgets[index].get("text")]
-                        print(memory.selected[1])
-                    except Exception as e:
-                        pass
-                    self.song_widgets[memory.selected[0]].configure(hover = True)
+        elif tab == "Files":
+            # If no songs in directory, return
+            if not self.song_widgets:
+                return
+            
+            if memory.selected is None or not memory.selected:
+                memory.selected = [0, self.song_widgets[0].cget("text")]
+                # Highlight the first one immediately
+                self.song_widgets[0].configure(fg_color=(highlightPurple))
+
+            # NAVIGATION 
+            current_index = memory.selected[0]
+            new_index = current_index
+
+            # Calculate where we WANT to go
+            if diff > 0:
+                new_index += 1
+            elif diff < 0:
+                new_index -= 1
+
+            # Check if the new index is actually valid (inside the list)
+            if 0 <= new_index < len(self.song_widgets):
+                
+                # Un-highlight the OLD widget
+                # (Reset color to transparent or default)
+                self.song_widgets[current_index].configure(fg_color="transparent") 
+
+                # Update Memory
+                song_name = self.song_widgets[new_index].cget("text")
+                memory.selected = [new_index, song_name]
+                print(f"Selected: {song_name}")
+
+                # Highlight the NEW widget
+                # (Set color to 'Highlight' color)
+                self.song_widgets[new_index].configure(fg_color=(highlightPurple))
+                
+                # Scroll the view to the new button so it doesn't go off screen
+                self.song_widgets[new_index].focus_set()

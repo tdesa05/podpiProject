@@ -82,8 +82,12 @@ class Controls():
     def cw_button(self, btn_name, state_str):
         if btn_name == "CENTER":
             pass # Will access the command of selected button (memory selected button)
+        # Menu button sets screen to playback, or if on playback already --> files.
         elif btn_name == "MENU":
-            self.gui.navbar.set("Files")
+            if self.gui.navbar.get() == "Files" or "Spotify":
+                self.gui.navbar.set("Playback")
+            else:
+                self.gui.navbar.set("Files")
         elif btn_name == "PLAY":
             self.playback.song_action('play')
         elif btn_name == "PREV":

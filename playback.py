@@ -19,6 +19,7 @@ class Playback():
         self.gui = gui # When another file calls this file and its functions, its passing in its whole object reference
         self.media_library = 'MusicLibrary'
         self.media_list = instance.media_list_new() # type: ignore
+        self.unshuffled_list = None
         self.files = Files(self)
 
         # Player to read events off of
@@ -59,10 +60,6 @@ class Playback():
 
     # Handles audio playback based on given parameters
     def recieve_song(self, fp:str = "", option:str = "play"): # fp is songs path, option is what to do with song file
-        # Save last played song
-        memory.song_list.clear()
-        memory.previous_song = memory.current_song
-        memory.save()
         print("Song recieved")
         if option == "queue":
             # Tries to get current index, otherwise its 0
@@ -78,6 +75,9 @@ class Playback():
             self.media_list.insert_media(media, current_index + 1) # Add media to list
             print(fp, "Queued")
         elif option == "play":
+            # Save last played song
+            memory.song_list.clear()
+            memory.previous_song = memory.current_song
             if fp.startswith('file:'):
                 print("butt")
             else:
@@ -159,35 +159,15 @@ class Playback():
     
     # Check whether shuffle is enabled or not, then handle queue
     def check_shuffle(self):
-        if memory.shuffle:
-            print("Shuffled")
-            old_list = self.media_list.get_media_list()
-
-            # Extract all media items
-            items = [old_list.item_at_index(i) for i in range(old_list.count())]
-
-            # Shuffle in Python
-            random.shuffle(items)
-
-            # Create a new media list
-            new_list = instance.media_list_new() # type: ignore
-
-            # Add items back
-            for m in items:
-                new_list.add_media(m)
-
-            # Replace the existing list
-            self.reset_media_list()
-            self.media_list.set_media(new_list)
-            memory.shuffle = False
-        else:
-            # Un shuffle playback
-            print("Unshuffled")
-
+        if memory.shuffle: # Shuffle list and store unshuffled list
+            self.unshuffled_list = self.media_list
+            random.shuffle(self.media_list)
+        elif self.unshuffled_list != None: # Restore unshuffled list
+            self.media_list = self.unshuffled_list
+            self.unshuffled_list = None # Set unshuffled list back to None
             memory.shuffle = True
         memory.save
 
-    # Events for on_play NEED TO FIX FOR PICKING SONG
     def on_play(self, event): # 'event' required for the lambda, VLC doesn't like class functions
         mrl = player.get_media_player().get_media().get_mrl()
         fp = url2pathname(urlparse(mrl).path)
