@@ -435,7 +435,8 @@ class Gui(ctk.CTk):
                 list_len = len(self.song_widgets)
 
                 # Scroll position for pos
-                scroll_position = (new_index) / (list_len - 5)
+                safe_index = max(0, new_index - 3) # Index for scroll to be alligned too, so scroll lags behind selection
+                scroll_position = safe_index / list_len
 
                 # 0.0 --> 1.0 is the range
                 self.files_scrollable_frame._parent_canvas.yview_moveto(scroll_position)
