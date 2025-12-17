@@ -435,7 +435,7 @@ class Gui(ctk.CTk):
                 list_len = len(self.song_widgets)
 
                 # Scroll position for pos
-                scroll_position = (new_index + 1) / list_len # -2 or -3 or -1 ...
+                scroll_position = (new_index + 1) / (list_len - 3)
 
                 # 0.0 --> 1.0 is the range
                 self.files_scrollable_frame._parent_canvas.yview_moveto(scroll_position)
