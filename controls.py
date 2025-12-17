@@ -27,6 +27,7 @@ class Controls():
         self.playback = playback
         self.last_button_time = 0  # Tracks last time button was pressed
         self.last_touch_time = 0 # Last time wheel was touched
+        self.last_action_time = 0 # Last time action was triggered
 
         # A flag to control pausing. 
         # set() = Running (True)
@@ -81,20 +82,37 @@ class Controls():
 
     # Handles button presses of clickwheel
     def cw_button(self, btn_name, state_str):
+        if state_str == "RELEASED":
+            return
+    
+        current_time = time.time()
+
+        current_tab = self.gui.navbar.get()
+
         if btn_name == "CENTER":
+            print(memory.selected)
             pass # Will access the command of selected button (memory selected button)
+
         # Menu button sets screen to playback, or if on playback already --> files.
         elif btn_name == "MENU":
-            if self.gui.navbar.get() == "Files" or "Spotify":
+            if current_tab in ["Files", "Spotify"]:
                 self.gui.navbar.set("Playback")
             else:
                 self.gui.navbar.set("Files")
         elif btn_name == "PLAY":
             self.playback.song_action('play')
-        elif btn_name == "PREV":
-            self.playback.song_action('back')
-        elif btn_name == "NEXT":
-            self.playback.song_action('skip')
+
+        elif btn_name in ["PREV", "NEXT"]:
+            if current_time - self.last_action_time < 0.5: # 500ms cooldown
+                print("Skipping too fast - Ignored safety.")
+                return
+            
+            self.last_action_time = current_time # Reset timer
+
+            if btn_name == "PREV":
+                self.playback.song_action('back')
+            elif btn_name == "NEXT":
+                self.playback.song_action('skip')
 
 
 
@@ -108,6 +126,7 @@ class Controls():
         # Set timeout once every 100ms so loop doesnt freeze
         sock.settimeout(0.1)
         last_wheel_pos = -1
+
         while not self.should_exit:
             # Check if paused
             if not self.is_running.is_set():
@@ -158,7 +177,7 @@ class Controls():
 
                 if diff != 0:
                     current_time = time.time()
-                    if current_time - self.last_touch_time > 0.05:
+                    if current_time - self.last_touch_time > 0.08: # 80ms debounce
                         # Have to use self.gui.after in order to call functions in other gui class, that updates tkinter widgets
                         # This ensures program calls function when safe to do so, tkinter is in charge
                         self.gui.after(0, self.gui.cw_interaction, diff) # Safe call when touching GUI

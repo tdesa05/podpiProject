@@ -379,7 +379,7 @@ class Gui(ctk.CTk):
                     return # Otherwise speeds up crazy
             self.scroll_job = self.after(24, lambda: self.scrolling_label())
 
-    # Updates gui dependent on user's current location and input
+    # Updates gui dependent on user's current location and input, only reads if positive or negative diff from wheel
     def cw_interaction(self, diff):
         tab = self.navbar.get() # We do this here, as would cause issues calling in controls.py as it runs on another thread
 
@@ -395,6 +395,8 @@ class Gui(ctk.CTk):
             if not self.song_widgets:
                 return
             
+            list_len = len(self.song_widgets)
+
             if memory.selected is None or not memory.selected:
                 memory.selected = [0, self.song_widgets[0].cget("text")]
                 # Highlight the first one immediately
@@ -428,3 +430,12 @@ class Gui(ctk.CTk):
                 
                 # Scroll the view to the new button so it doesn't go off screen
                 self.song_widgets[new_index].focus_set()
+
+                # Length of list
+                list_len = len(self.song_widgets)
+
+                # Scroll position for pos
+                scroll_position = (new_index + 1) / list_len # -2 or -3 or -1 ...
+
+                # 0.0 --> 1.0 is the range
+                self.files_scrollable_frame._parent_canvas.yview_moveto(scroll_position)
