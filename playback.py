@@ -13,6 +13,8 @@ from urllib.request import url2pathname
 instance = vlc.Instance("--vout=dummy")
 player = instance.media_list_player_new() # type: ignore
 
+
+
 # Handles playback of music files / streaming
 class Playback():
     def __init__(self, gui):
@@ -42,12 +44,10 @@ class Playback():
             media = instance.media_new(fp) # type: ignore
             self.media_list.add_media(media)
             player.set_media_list(self.media_list)
+            self.internal_player.audio_set_volume(memory.volume_lvl)
 
     # Resets the media list and memory list
-    def reset_media_list(self, reset_memory):
-        if reset_memory:
-            memory.song_list.clear()
-            memory.save()
+    def reset_media_list(self):
         self.media_list = instance.media_list_new() # type: ignore
 
     # Playback options triggered by input in Control class
@@ -100,7 +100,7 @@ class Playback():
                 songs = []
                 song_index = None
                 player.stop() # Stop playback
-                self.reset_media_list(True)
+                self.reset_media_list()
 
                 # Find all songs in directory
                 for root, dirs, files in os.walk(memory.current_path):
@@ -154,7 +154,9 @@ class Playback():
         try:
             art_path = album_path + '/' + files[0]
         except:
-            art_path = 'images/stock_album_art_2.jpg'
+            supported_formats = ('.png', '.jpg')
+            files = [name for name in os.listdir('images') if name.endswith(supported_formats)]
+            art_path = 'images/' + files[random.randint(0, len(files) - 1)]
         return art_path
 
     # Visual indicator of remaining song time
@@ -175,14 +177,32 @@ class Playback():
     
     # Check whether shuffle is enabled or not, then handle queue
     def check_shuffle(self):
-        if memory.shuffle: # Shuffle list and store unshuffled list
+        if not memory.shuffle: # Shuffle list and store unshuffled list, if not currently shuffled
             self.unshuffled_list = self.media_list
-            random.shuffle(self.media_list)
-        elif self.unshuffled_list != None: # Restore unshuffled list
-            self.media_list = self.unshuffled_list
-            self.unshuffled_list = None # Set unshuffled list back to None
+            shuffle_list = []
+
+            shuffle_media_list = instance.media_list_new() # type: ignore
+
+            for i, item in enumerate(self.unshuffled_list):
+                shuffle_list.append(self.media_list.item_at_index(i))
+            random.shuffle(shuffle_list)
+            self.reset_media_list()
+            
+            for media in shuffle_list:
+                shuffle_media_list.add_media(media)
+
+            self.media_list = shuffle_media_list
+            print(self.media_list)
+            player.set_media_list(self.media_list)
             memory.shuffle = True
-        memory.save()
+        else: # Restore unshuffled list
+            # When list restores, if we were at index 4 for the shuffled list, we will be at index 4 of unshuffled
+            if self.unshuffled_list != None:
+                self.reset_media_list()
+                self.media_list = self.unshuffled_list
+                player.set_media_list(self.media_list)
+                self.unshuffled_list = None # Set unshuffled list back to None
+            memory.shuffle = False
 
     def on_play(self, event): # 'event' required for the lambda, VLC doesn't like class functions
         mrl = player.get_media_player().get_media().get_mrl()
@@ -202,13 +222,18 @@ class Playback():
             self.gui.scrolling_label(True)
         memory.save()
 
+
+    # Increments/decrements volume by given amount
     def volume(self, increment:int):
         current_volume = self.internal_player.audio_get_volume()
         new_volume = current_volume + increment
 
-        if (new_volume) > 100 or (new_volume) < 0:
-            new_volume = current_volume
-            print(f"Volume at upper/lower limit")
+        if (new_volume) > 100:
+            new_volume = 100
+        elif (new_volume) < 0:
+            new_volume = 0
+
+        print(new_volume)
 
         memory.volume_lvl = new_volume
         self.internal_player.audio_set_volume(new_volume)
@@ -256,7 +281,7 @@ class Playback():
             print(memory.song_list) # Print shows list in perfect state
             memory.save() # Saves only every second
             player.stop()
-            self.reset_media_list(False)
+            self.reset_media_list()
             self.media_list = new_media_list
             player.set_media_list(self.media_list)
             player.play()

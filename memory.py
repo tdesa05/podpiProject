@@ -21,7 +21,7 @@ class Memory():
         self.scroll_x:float = 0 # Position of text (x-axis) 
         
         self.load() # Load saved data on launch
-    
+
     # Turns memory variables into dictionary
     def to_dict(self):
         return {
@@ -52,7 +52,7 @@ class Memory():
                 self.song_list = data.get("song_list", [])
                 self.current_song = data.get("current_song", "")
                 self.previous_song = data.get("previous_song", "")
-                self.shuffle = data.get("shuffle", False)
+                #self.shuffle = data.get("shuffle", False) # For now, don't load shuffle
                 self.volume_lvl = data.get("volume_lvl", 0)
         except Exception as e:
             print(f"Error loading saved data: {e}")

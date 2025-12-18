@@ -60,6 +60,10 @@ class Controls():
             self.gui.playback.song_action('skip')
         elif event.keysym == 'z':
             self.gui.playback.song_action('shuffle')
+        elif event.keysym == '-':
+            self.gui.playback.volume(-1)
+        elif event.keysym == '=':
+            self.gui.playback.volume(1)
 
     # Pauses clickwheel input
     def pause_input(self):
