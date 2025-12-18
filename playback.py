@@ -1,6 +1,7 @@
 import vlc
 import os
 import random
+import time
 from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
 from files import Files
@@ -20,6 +21,7 @@ class Playback():
         self.media_library = 'MusicLibrary'
         self.media_list = instance.media_list_new() # type: ignore
         self.unshuffled_list = None
+        self.last_change = 0 # Last time track was changed (skip/back)
         self.files = Files(self)
 
         # Player to read events off of
@@ -34,27 +36,41 @@ class Playback():
         # Load media list stored from last instance
         self.load_media_list()
 
+    # Loads memory list into current media list
     def load_media_list(self):
         for fp in memory.song_list:
             media = instance.media_new(fp) # type: ignore
             self.media_list.add_media(media)
             player.set_media_list(self.media_list)
 
-    def reset_media_list(self):
+    # Resets the media list and memory list
+    def reset_media_list(self, reset_memory):
+        if reset_memory:
+            memory.song_list.clear()
+            memory.save()
         self.media_list = instance.media_list_new() # type: ignore
 
+    # Playback options triggered by input in Control class
     def song_action(self, action:str):
-        if action == 'skip':
-            player.next()
-        elif action == 'pause' or 'play':
-            if vlc.State.Playing: # type: ignore
-                player.pause()
-            elif vlc.State.Paused: # type: ignore
-                player.play()
-        elif action == 'back':
-            player.previous()
-        elif action == 'shuffle':
-            self.library_shuffle(self.media_library, False)
+        try:
+            if action in ['skip', 'back']:
+                if time.time() - self.last_change < 0.5:
+                    print(f"Changing tracks too quick")
+                    return
+                if action == 'skip':
+                    player.next()
+                else:
+                    player.previous()
+                self.last_change = time.time()
+            elif action in ['pause', 'play']:
+                if player.get_state() == vlc.State.Playing: # type: ignore
+                    player.pause()
+                else:
+                    player.play()
+            elif action == 'shuffle':
+                self.library_shuffle(self.media_library, False)
+        except Exception as e:
+            print(f"Playback error: {e}")
 
 
 
@@ -84,7 +100,7 @@ class Playback():
                 songs = []
                 song_index = None
                 player.stop() # Stop playback
-                self.reset_media_list()
+                self.reset_media_list(True)
 
                 # Find all songs in directory
                 for root, dirs, files in os.walk(memory.current_path):
@@ -166,7 +182,7 @@ class Playback():
             self.media_list = self.unshuffled_list
             self.unshuffled_list = None # Set unshuffled list back to None
             memory.shuffle = True
-        memory.save
+        memory.save()
 
     def on_play(self, event): # 'event' required for the lambda, VLC doesn't like class functions
         mrl = player.get_media_player().get_media().get_mrl()
@@ -224,16 +240,24 @@ class Playback():
 
         # Create new media list, add each song from songs list to it
         new_media_list = instance.media_list_new() # type: ignore
+
+        if not queue:
+            memory.song_list.clear()
         for fp in songs:
             media = instance.media_new(fp) # type: ignore
             new_media_list.add_media(media)
+            memory.song_list.append(fp) # Append new list of songs
 
         if queue:
             # Add each media item to end of current playback if in queue
             for i in range(new_media_list.count()):
                 self.media_list.add_media(new_media_list.item_at_index(i))
         else:
+            print(memory.song_list) # Print shows list in perfect state
+            memory.save() # Saves only every second
             player.stop()
-            self.reset_media_list()
+            self.reset_media_list(False)
             self.media_list = new_media_list
             player.set_media_list(self.media_list)
+            player.play()
+        print(memory.song_list) # Shows only every second item, even if I didnt save earlier

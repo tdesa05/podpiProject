@@ -53,18 +53,13 @@ class Controls():
             else:
                 pass
         elif event.keysym == 'space':
-            self.playback.song_action('pause')
+            self.gui.playback.song_action('pause')
         elif event.keysym == 'q':
-            shuffle = memory.shuffle
-            if shuffle:
-                shuffle = False
-            else:
-                shuffle = True
-            self.playback.check_shuffle()
+            self.gui.playback.check_shuffle()
         elif event.keysym == 'a':
             self.gui.playback.song_action('skip')
         elif event.keysym == 'z':
-            self.playback.song_action('shuffle')
+            self.gui.playback.song_action('shuffle')
 
     # Pauses clickwheel input
     def pause_input(self):
@@ -100,7 +95,7 @@ class Controls():
             else:
                 self.gui.navbar.set("Files")
         elif btn_name == "PLAY":
-            self.playback.song_action('play')
+            self.gui.playback.song_action('play')
 
         elif btn_name in ["PREV", "NEXT"]:
             if current_time - self.last_action_time < 0.5: # 500ms cooldown
@@ -110,9 +105,9 @@ class Controls():
             self.last_action_time = current_time # Reset timer
 
             if btn_name == "PREV":
-                self.playback.song_action('back')
+                self.gui.playback.song_action('back')
             elif btn_name == "NEXT":
-                self.playback.song_action('skip')
+                self.gui.playback.song_action('skip')
 
 
 

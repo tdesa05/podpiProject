@@ -21,7 +21,7 @@ class Memory():
         self.scroll_x:float = 0 # Position of text (x-axis) 
         
         self.load() # Load saved data on launch
-
+    
     # Turns memory variables into dictionary
     def to_dict(self):
         return {

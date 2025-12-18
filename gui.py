@@ -309,7 +309,10 @@ class Gui(ctk.CTk):
 
     # Updates gui to reflect progress of song, along with timestamps on bar
     def update_progress_bar(self, current_time, total_time):
-        bar_pos = current_time/total_time
+        if current_time > 0:
+            bar_pos = current_time/total_time
+        else:
+            bar_pos = 0
         self.progress_bar.set(bar_pos)
 
         # String for current song time
