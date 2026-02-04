@@ -54,6 +54,10 @@ class Controls():
                 pass
         elif event.keysym == 'space':
             self.gui.playback.song_action('pause')
+        elif event.keysym == 'm':
+            self.gui.iconify()
+        elif event.keysym == 'n':
+            self.gui.deiconify()
         elif event.keysym == 'q':
             self.gui.playback.check_shuffle()
         elif event.keysym == 'a':
@@ -90,6 +94,7 @@ class Controls():
 
         if btn_name == "CENTER":
             print(memory.selected)
+            self.gui.song_widgets[memory.selected[0]].invoke()
             pass # Will access the command of selected button (memory selected button)
 
         # Menu button sets screen to playback, or if on playback already --> files.

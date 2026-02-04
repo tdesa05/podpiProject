@@ -288,6 +288,7 @@ class Gui(ctk.CTk):
                                     border_color = "white",
                                     anchor = "w",
                                     hover = False,
+                                    state = 'disabled', # Must be for invoke to work
                                     command = command   # Refers to previously created lambda function (play or add to frame)
                                     )
             entry.grid(column=1, pady=0, padx=2, sticky="ew")

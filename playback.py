@@ -10,7 +10,8 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 # Initialise VLC
-instance = vlc.Instance("--vout=dummy", "--aout=alsa", "--alsa-audio-device=hw:1,0")
+instance = vlc.Instance("--vout=dummy", "--aout=alsa", "--alsa-audio-device=hw:1,0") # FOR PI
+#instance = vlc.Instance("--vout=dummy") # FOR LAPTOP
 player = instance.media_list_player_new() # type: ignore
 
 
@@ -26,6 +27,9 @@ class Playback():
         self.last_change = 0 # Last time track was changed (skip/back)
         self.files = Files(self)
 
+        # Initial attempt to boot VLC
+        self.refresh_vlc_instance()
+
         self.progress_loop_id = 0
 
         # Player to read events off of
@@ -39,7 +43,40 @@ class Playback():
         
         # Load media list stored from last instance
         self.load_media_list()
+        
 
+    def is_usb_available(self):
+            # Check if Card 1 exists in the ALSA directory
+            return os.path.exists('/proc/asound/card1')
+
+    def refresh_vlc_instance(self):
+        """Re-builds the VLC player based on current hardware status"""
+        try:
+            # Determine arguments based on hardware presence
+            args = ["--vout=dummy", "--quiet", "--no-video"]
+            
+            if self.is_usb_available():
+                print("USB Audio detected. Connecting to hw:1,0")
+                args.append("--aout=alsa")
+                args.append("--alsa-audio-device=hw:1,0")
+            else:
+                print("USB Audio missing. Running in headless/silent mode.")
+                args.append("--aout=dummy") # Prevents ALSA error spam
+
+            # Re-initialize
+            self.instance = vlc.Instance(*args)
+            self.player = self.instance.media_list_player_new() #type: ignore
+            self.internal_player = self.player.get_media_player()
+            
+            # Re-attach events (required because internal_player is new)
+            events = self.internal_player.event_manager()
+            events.event_attach(vlc.EventType.MediaPlayerPlaying, lambda e: self.on_play(e)) #type:ignore
+            
+            return True
+        except Exception as e:
+            print(f"VLC Initialization failed: {e}")
+            return False
+    
     # Loads memory list into current media list
     def load_media_list(self):
         for fp in memory.song_list:
@@ -56,6 +93,16 @@ class Playback():
     def song_action(self, action:str):
         if self.gui.is_loading_song:
             return
+        
+        if action == 'play':
+            current_hw = self.is_usb_available()
+
+        # If we think we have USB but the device is gone, or vice-versa:
+        # We need to refresh the instance.
+        if current_hw != ("hw:1,0" in str(self.instance)):
+            self.refresh_vlc_instance()
+            self.load_media_list()
+
         try:
             if action in ['skip', 'back']:
                 if time.time() - self.last_change < 1:
