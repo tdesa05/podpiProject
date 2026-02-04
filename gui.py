@@ -35,6 +35,12 @@ class Gui(ctk.CTk):
     # Initialize the main window
     def __init__(self):
         super().__init__()
+
+        # Try to stop idling
+        self.attributes('-topmost', True) # Keep window on top
+        self.focus_force()               # Keep focus
+
+
         self.title("Navigate Library") # Title of the window
         self.geometry("320x240") # Width x Height
         self.resizable(False, False)
@@ -300,6 +306,8 @@ class Gui(ctk.CTk):
 
     # Updates image to album art of current directory
     def update_album_art(self, art_path):
+        # Clear previous image reference to free RAM
+        self.album_art.configure(image=None)
         new_art = ctk.CTkImage(dark_image = Image.open(art_path),
                                size = (120, 120)
                                )
