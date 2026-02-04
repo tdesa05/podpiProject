@@ -28,7 +28,7 @@ class Playback():
 
         # Player to read events off of
         self.internal_player = player.get_media_player()
-
+        print(vlc.AudioOutputDevice)
         # Event manager
         player_events = self.internal_player.event_manager()
         player_events.event_attach(vlc.EventType.MediaPlayerPlaying, lambda event: self.on_play(event)) # type: ignore
@@ -54,7 +54,7 @@ class Playback():
     def song_action(self, action:str):
         try:
             if action in ['skip', 'back']:
-                if time.time() - self.last_change < 0.5:
+                if time.time() - self.last_change < 1:
                     print(f"Changing tracks too quick")
                     return
                 if action == 'skip':

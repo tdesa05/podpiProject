@@ -102,7 +102,7 @@ class Controls():
             self.gui.playback.song_action('play')
 
         elif btn_name in ["PREV", "NEXT"]:
-            if current_time - self.last_action_time < 0.5: # 500ms cooldown
+            if current_time - self.last_action_time < 1: # 1 second cooldown
                 print("Skipping too fast - Ignored safety.")
                 return
             
