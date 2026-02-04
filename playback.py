@@ -101,7 +101,7 @@ class Playback():
         # We need to refresh the instance.
         if current_hw != ("hw:1,0" in str(self.instance)):
             self.refresh_vlc_instance()
-            self.load_media_list()
+            player.set_media_list(self.media_list)
 
         try:
             if action in ['skip', 'back']:
@@ -171,7 +171,7 @@ class Playback():
                     media = instance.media_new(full_path) # type: ignore
                     self.media_list.add_media(media) # Add song
                     memory.song_list.append(full_path)
-
+                
                 player.set_media_list(self.media_list) # Add song to player
                 
                 print("Beginning playback for song ", fp)
