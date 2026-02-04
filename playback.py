@@ -26,6 +26,8 @@ class Playback():
         self.last_change = 0 # Last time track was changed (skip/back)
         self.files = Files(self)
 
+        self.progress_loop_id = 0
+
         # Player to read events off of
         self.internal_player = player.get_media_player()
         print(vlc.AudioOutputDevice)
@@ -52,14 +54,18 @@ class Playback():
 
     # Playback options triggered by input in Control class
     def song_action(self, action:str):
+        if self.gui.is_loading_song:
+            return
         try:
             if action in ['skip', 'back']:
                 if time.time() - self.last_change < 1:
                     print(f"Changing tracks too quick")
                     return
                 if action == 'skip':
+                    self.gui.is_loading_song = True
                     player.next()
                 else:
+                    self.gui.is_loading_song = True
                     player.previous()
                 self.last_change = time.time()
             elif action in ['pause', 'play']:
@@ -161,17 +167,20 @@ class Playback():
 
     # Visual indicator of remaining song time
     def progress_bar(self, fp): # fp is still full_path of song (access to metadata), player is song instance
+        if self.progress_loop_id != fp:
+            return
+        
         # If player stopped or finished, exit loop by NOT calling after() again
-        if player.get_state() in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error): # type: ignore
+        state = player.get_state()
+        if state in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error): # type: ignore
             print("Song finished and stopping loop")
             return
         else: 
             if player.is_playing(): # type: ignore
-                m = player.get_media_player() # Media player within listplayer
-                current_time = m.get_time()
-                length = m.get_length()
+                current_time = self.internal_player.get_time()
+                length = self.internal_player.get_length()
                 self.gui.update_progress_bar(current_time, length)
-                self.gui.after(500, lambda: self.progress_bar(fp)) # Update bar twice a second
+                self.gui.after(800, lambda: self.progress_bar(fp)) # Update bar every 800ms
             elif player.get_state() == vlc.State.Paused: # type: ignore
                 self.gui.after(1000, lambda: self.progress_bar(fp)) # Update bar once a second
     
@@ -209,19 +218,26 @@ class Playback():
         fp = url2pathname(urlparse(mrl).path)
         if memory.current_song == fp:
             return
-        else:
-            memory.current_song = fp
-            print(fp)
-            #self.shuffle(self.media_library, False)
-            # Statements to run no matter what
-            self.progress_bar(fp)
-            self.gui.update_text(self.get_title_artist(fp))
-            self.gui.update_album_art(self.get_album_art())
-            memory.scroll_direction = 'left'
-            self.gui.update_idletasks()
-            self.gui.scrolling_label(True)
-        memory.save()
+        self.gui.after(0, self.sync_ui_to_new_song, fp)
 
+    def sync_ui_to_new_song(self, fp):
+        memory.current_song = fp
+        print(fp)
+
+        # 2. Reset the loading flag so we can skip again
+        self.gui.is_loading_song = False 
+        
+        # Update UI components
+        self.gui.update_text(self.get_title_artist(fp))
+        self.gui.update_album_art(self.get_album_art())
+        
+        memory.scroll_direction = 'left'
+        self.gui.scrolling_label(True)
+        
+        # Start ONE progress loop, passing the current song path as a 'key'
+        self.progress_loop_id = fp 
+        self.progress_bar(fp)
+        memory.save()
 
     # Increments/decrements volume by given amount
     def volume(self, increment:int):

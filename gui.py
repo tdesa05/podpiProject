@@ -47,6 +47,10 @@ class Gui(ctk.CTk):
 
         # Jobs (running processes)
         self.scroll_job = None
+        self.is_loading_song = False
+
+        # Wakeup
+        self.bind("<<ClickwheelActivity>>", lambda e: "break")
 
         # Widgets
         self.song_widgets = []
@@ -302,6 +306,7 @@ class Gui(ctk.CTk):
 
     # Updates text on playback screen
     def update_text(self, info):
+        self.is_loading_song = False
         title = info[0]
         artist = info[1]
         self.song_title.configure(text = title)
@@ -380,7 +385,7 @@ class Gui(ctk.CTk):
                     memory.scroll_direction = 'left'
                     self.scroll_job = self.after(1500, lambda: self.scrolling_label())
                     return # Otherwise speeds up crazy
-            self.scroll_job = self.after(24, lambda: self.scrolling_label())
+            self.scroll_job = self.after(45, lambda: self.scrolling_label())
 
     # Updates gui dependent on user's current location and input, only reads if positive or negative diff from wheel
     def cw_interaction(self, diff):
@@ -416,30 +421,31 @@ class Gui(ctk.CTk):
                 new_index -= 1
 
             # Check if the new index is actually valid (inside the list)
-            if 0 <= new_index < len(self.song_widgets):
-                
-                # Un-highlight the OLD widget
-                # (Reset color to transparent or default)
-                self.song_widgets[current_index].configure(fg_color="transparent") 
+            if new_index != current_index:
+                if 0 <= new_index < len(self.song_widgets):
+                    
+                    # Un-highlight the OLD widget
+                    # (Reset color to transparent or default)
+                    self.song_widgets[current_index].configure(fg_color="transparent") 
 
-                # Update Memory
-                song_name = self.song_widgets[new_index].cget("text")
-                memory.selected = [new_index, song_name]
-                print(f"Selected: {song_name}")
+                    # Update Memory
+                    song_name = self.song_widgets[new_index].cget("text")
+                    memory.selected = [new_index, song_name]
+                    print(f"Selected: {song_name}")
 
-                # Highlight the NEW widget
-                # (Set color to 'Highlight' color)
-                self.song_widgets[new_index].configure(fg_color=(highlightPurple))
-                
-                # Scroll the view to the new button so it doesn't go off screen
-                self.song_widgets[new_index].focus_set()
+                    # Highlight the NEW widget
+                    # (Set color to 'Highlight' color)
+                    self.song_widgets[new_index].configure(fg_color=(highlightPurple))
+                    
+                    # Scroll the view to the new button so it doesn't go off screen
+                    self.song_widgets[new_index].focus_set()
 
-                # Length of list
-                list_len = len(self.song_widgets)
+                    # Length of list
+                    list_len = len(self.song_widgets)
 
-                # Scroll position for pos
-                safe_index = max(0, new_index - 3) # Index for scroll to be alligned too, so scroll lags behind selection
-                scroll_position = safe_index / list_len
+                    # Scroll position for pos
+                    safe_index = max(0, new_index - 3) # Index for scroll to be alligned too, so scroll lags behind selection
+                    scroll_position = safe_index / list_len
 
-                # 0.0 --> 1.0 is the range
-                self.files_scrollable_frame._parent_canvas.yview_moveto(scroll_position)
+                    # 0.0 --> 1.0 is the range
+                    self.files_scrollable_frame._parent_canvas.yview_moveto(scroll_position)

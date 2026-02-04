@@ -135,7 +135,10 @@ class Controls():
 
             try:
                 # Buffer size is 3 because the C driver sends exactly 3 bytes
-                data, addr = sock.recvfrom(3) 
+                data, addr = sock.recvfrom(3)
+                if data:
+                # Poke out of idleness
+                    self.gui.after(0, lambda: self.gui.event_generate("<<ClickwheelActivity>>"))
 
                 # Parse the bytes (Python treats bytes as integers 0-255)
                 btn_id = data[0]
