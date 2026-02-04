@@ -30,7 +30,7 @@ class Playback():
 
         # Player to read events off of
         self.internal_player = player.get_media_player()
-        print(vlc.AudioOutputDevice)
+        
         # Event manager
         player_events = self.internal_player.event_manager()
         player_events.event_attach(vlc.EventType.MediaPlayerPlaying, lambda event: self.on_play(event)) # type: ignore
@@ -214,6 +214,7 @@ class Playback():
             memory.shuffle = False
 
     def on_play(self, event): # 'event' required for the lambda, VLC doesn't like class functions
+        print(player.audio_output_device_enum())
         mrl = player.get_media_player().get_media().get_mrl()
         fp = url2pathname(urlparse(mrl).path)
         if memory.current_song == fp:
