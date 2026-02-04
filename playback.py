@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 # Initialise VLC
-instance = vlc.Instance("--vout=dummy", "--aout=alsa")
+instance = vlc.Instance("--vout=dummy", "--aout=alsa", "--alsa-audio-device=hw:1,0")
 player = instance.media_list_player_new() # type: ignore
 
 
